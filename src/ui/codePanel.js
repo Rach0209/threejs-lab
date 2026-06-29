@@ -144,9 +144,9 @@ export function createCodePanel() {
     // 원본 텍스트 저장 (복사용)
     codeBlock.dataset.raw = source;
 
-    // highlight.js 로 구문 강조 적용
-    const result = hljs.highlight(source, { language: 'javascript' });
-    codeBlock.innerHTML = result.value;
+    // highlightElement()는 .hljs 클래스를 자동으로 붙여줘서 테마 색상이 정상 적용됨
+    codeBlock.textContent = source;
+    hljs.highlightElement(codeBlock);
 
     // 패널 상태(열림/닫힘)는 유지 — 토글 버튼으로만 제어
     // 스크롤 맨 위로

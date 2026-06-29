@@ -125,10 +125,11 @@ canvas {
 /* highlight.js 테마 커스터마이징 */
 #code-pre code.hljs {
   background: transparent !important;
+  color: #abb2bf !important; /* atom-one-dark 기본 텍스트 색 명시 */
   font-size: 12.5px;
   line-height: 1.65;
   font-family: 'Cascadia Code', 'Fira Code', ui-monospace, Consolas, monospace;
-  padding: 16px 20px;
+  padding: 16px 20px 16px 26px; /* 왼쪽: 리사이즈 핸들(6px) + 여백 */
   display: block;
   tab-size: 2;
 }

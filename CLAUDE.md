@@ -20,6 +20,8 @@ Three.js + Vanilla JavaScript 기반 3D 그래픽스 학습 도구.
 - GitHub Pages: https://rach0209.github.io/threejs-lab/
 - 배포 트리거: main 브랜치 push
 - 워크플로우: .github/workflows/deploy.yml
+- 방식: 공식 GitHub Actions Pages 배포 (actions/configure-pages → upload-pages-artifact → deploy-pages)
+  - peaceiris/actions-gh-pages 방식 아님 (Pages build_type이 workflow로 설정되어 있어 브랜치 push 방식 동작 안 함)
 
 ## 디렉토리 구조
 ```

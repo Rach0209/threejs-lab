@@ -119,20 +119,24 @@ canvas {
   margin: 0;
   padding: 0;
   background: transparent !important;
+  color: #abb2bf;
   min-height: 100%;
 }
 
 /* highlight.js 테마 커스터마이징 */
 #code-pre code.hljs {
   background: transparent !important;
-  color: #abb2bf !important; /* atom-one-dark 기본 텍스트 색 명시 */
+  color: #abb2bf;
   font-size: 12.5px;
   line-height: 1.65;
   font-family: 'Cascadia Code', 'Fira Code', ui-monospace, Consolas, monospace;
-  padding: 16px 20px 16px 26px; /* 왼쪽: 리사이즈 핸들(6px) + 여백 */
+  padding: 20px 24px 20px 40px;
   display: block;
   tab-size: 2;
 }
+
+/* hljs 테마가 뒤늦게 주입돼도 기본 텍스트 색 보장 */
+#code-panel .hljs { color: #abb2bf; }
 
 /* 행 번호 효과 (::before로 줄 강조) */
 #code-pre code .hljs-comment { color: #5c7a7a; font-style: italic; }

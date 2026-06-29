@@ -1,0 +1,426 @@
+/* ── 전역 리셋 ─────────────────────────────────────────────── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #000;
+  overflow: hidden;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+canvas {
+  display: block;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   우측 소스 코드 패널
+   ══════════════════════════════════════════════════════════════ */
+
+#code-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: 480px;
+  background: rgba(8, 8, 16, 0.92);
+  backdrop-filter: blur(16px);
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  transition: width 0.25s ease;
+  overflow: hidden;
+}
+
+#code-panel.collapsed {
+  width: 0;
+  border-left: none;
+}
+
+/* 헤더 */
+.code-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+  gap: 8px;
+  min-width: 480px; /* 접힐 때 내용이 밀리지 않도록 */
+}
+
+.code-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.code-icon {
+  font-size: 14px;
+  color: #6366f1;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.code-filename {
+  font-size: 12px;
+  color: #94a3b8;
+  font-family: ui-monospace, Consolas, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.code-header-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+#copy-btn {
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 6px;
+  color: #a5b4fc;
+  font-size: 11px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+#copy-btn:hover {
+  background: rgba(99, 102, 241, 0.3);
+}
+
+/* 코드 본문 */
+.code-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  min-width: 480px;
+}
+
+.code-panel-body::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.code-panel-body::-webkit-scrollbar-track { background: transparent; }
+.code-panel-body::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+}
+
+#code-pre {
+  margin: 0;
+  padding: 0;
+  background: transparent !important;
+  min-height: 100%;
+}
+
+/* highlight.js 테마 커스터마이징 */
+#code-pre code.hljs {
+  background: transparent !important;
+  font-size: 12.5px;
+  line-height: 1.65;
+  font-family: 'Cascadia Code', 'Fira Code', ui-monospace, Consolas, monospace;
+  padding: 16px 20px;
+  display: block;
+  tab-size: 2;
+}
+
+/* 행 번호 효과 (::before로 줄 강조) */
+#code-pre code .hljs-comment { color: #5c7a7a; font-style: italic; }
+#code-pre code .hljs-keyword { color: #c792ea; }
+#code-pre code .hljs-string  { color: #c3e88d; }
+#code-pre code .hljs-number  { color: #f78c6c; }
+#code-pre code .hljs-function { color: #82aaff; }
+
+/* 토글 버튼 — 패널 왼쪽 가장자리에 고정 */
+#code-toggle {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 0; /* JS(codePanel.js)가 동적으로 제어 */
+  transition: right 0.25s ease;
+  width: 28px;
+  height: 56px;
+  background: rgba(8, 8, 16, 0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: none;
+  border-radius: 8px 0 0 8px;
+  color: #6366f1;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 200;
+  transition: right 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  letter-spacing: 1px;
+}
+
+#code-toggle:hover {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+}
+
+/* right 값은 codePanel.js의 JS가 동적으로 제어 */
+
+/* ── 레슨 공통 info 박스 (오른쪽 하단 고정) ────────────────── */
+[id$="-info"],
+#loader-ui {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+#loader-ui {
+  pointer-events: auto;
+  bottom: auto;
+  top: 50%;
+  right: auto;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.info-box {
+  background: rgba(10, 10, 20, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 14px 16px;
+  color: #e2e8f0;
+  font-size: 13px;
+  line-height: 1.7;
+  min-width: 200px;
+  pointer-events: none;
+}
+
+.info-box strong { color: #f1f5f9; }
+
+.info-status, .loader-status {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(10, 10, 20, 0.85);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 12px;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* 06 인터랙션 */
+#interaction-info { pointer-events: none; }
+
+/* 07 GLB 드롭존 */
+.drop-zone {
+  background: rgba(10, 10, 20, 0.9);
+  border: 2px dashed rgba(99, 102, 241, 0.5);
+  border-radius: 16px;
+  padding: 32px 48px;
+  text-align: center;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  pointer-events: auto;
+}
+.drop-zone.drag-over {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.1);
+}
+.drop-icon { font-size: 48px; margin-bottom: 12px; }
+.drop-zone p { margin: 4px 0; font-size: 14px; }
+.file-btn {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 20px;
+  background: #6366f1;
+  color: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* 08 셰이더 */
+#shader-info { pointer-events: none; }
+
+/* ── 네비게이터 패널 ────────────────────────────────────────── */
+#nav-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 260px;
+  background: rgba(10, 10, 20, 0.85);
+  backdrop-filter: blur(12px);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  transition: width 0.25s ease;
+  overflow: hidden;
+}
+
+/* 패널 접힘 상태 */
+#nav-panel.collapsed {
+  width: 48px;
+}
+
+#nav-panel.collapsed .nav-body,
+#nav-panel.collapsed .nav-title {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── 헤더 ──────────────────────────────────────────────────── */
+.nav-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 12px;
+  padding-right: 48px; /* 토글 버튼 자리 확보 */
+  color: #e2e8f0;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.nav-logo {
+  font-size: 20px;
+  color: #6366f1;
+  flex-shrink: 0;
+}
+
+.nav-title {
+  flex: 1;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+/* 토글 버튼 — body에 직접 붙어있고 JS로 위치 제어 */
+#nav-toggle {
+  position: fixed;
+  top: 14px;
+  width: 36px;
+  height: 36px;
+  background: rgba(10, 10, 20, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 200;
+  transition: left 0.25s ease, color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#nav-toggle:hover {
+  color: #e2e8f0;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ── 본문 ──────────────────────────────────────────────────── */
+.nav-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 8px;
+  transition: opacity 0.2s;
+}
+
+.nav-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #475569;
+  padding: 0 8px 8px;
+}
+
+/* ── 레슨 목록 ─────────────────────────────────────────────── */
+#lesson-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lesson-item.active .lesson-btn {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.4);
+  color: #a5b4fc;
+}
+
+.lesson-item.active .lesson-id {
+  background: #6366f1;
+  color: #fff;
+}
+
+.lesson-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #94a3b8;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.lesson-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+}
+
+.lesson-id {
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.08);
+  color: #64748b;
+  padding: 3px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.lesson-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.lesson-info strong {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lesson-info small {
+  font-size: 11px;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

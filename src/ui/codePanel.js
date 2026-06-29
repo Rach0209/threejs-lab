@@ -9,7 +9,7 @@
 import hljs from 'highlight.js/lib/core';
 import javascript from 'highlight.js/lib/languages/javascript';
 import glsl from 'highlight.js/lib/languages/glsl';
-import 'highlight.js/styles/atom-one-dark.css';
+// CSS는 style.css에서 @import로 관리 (cascade 순서 보장)
 
 // highlight.js에 사용할 언어 등록 (필요한 것만 골라서 bundle 크기 절약)
 hljs.registerLanguage('javascript', javascript);

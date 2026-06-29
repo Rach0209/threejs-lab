@@ -140,6 +140,26 @@ canvas {
 #code-pre code .hljs-number  { color: #f78c6c; }
 #code-pre code .hljs-function { color: #82aaff; }
 
+/* 리사이즈 핸들 */
+.resize-handle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 6px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 10;
+  transition: background 0.15s;
+}
+
+.resize-handle:hover {
+  background: rgba(99, 102, 241, 0.35);
+}
+
+#code-panel.no-transition {
+  transition: none !important;
+}
+
 /* 토글 버튼 — 패널 왼쪽 가장자리에 고정 */
 #code-toggle {
   position: fixed;

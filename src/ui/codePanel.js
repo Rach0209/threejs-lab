@@ -65,17 +65,50 @@ export function createCodePanel() {
   const codeFilename = panel.querySelector('#code-filename');
   const copyBtn      = panel.querySelector('#copy-btn');
 
-  const PANEL_WIDTH = 480;
+  // ─── 리사이즈 핸들 ─────────────────────────────────────────
+  const resizeHandle = document.createElement('div');
+  resizeHandle.className = 'resize-handle';
+  panel.appendChild(resizeHandle);
+
+  const MIN_WIDTH = 480;
+  const getMaxWidth = () => Math.floor(window.innerWidth * 0.5);
+  let panelWidth = MIN_WIDTH;
 
   let collapsed = true; // 기본 닫힘
   panel.classList.add('collapsed');
 
   function updateToggle() {
-    toggle.style.right = collapsed ? '0px' : `${PANEL_WIDTH}px`;
-    // 버튼 방향 화살표로 상태 표시: 닫힘=왼쪽 화살표(열기), 열림=오른쪽 화살표(닫기)
+    toggle.style.right = collapsed ? '0px' : `${panelWidth}px`;
     toggle.textContent = collapsed ? '◀' : '▶';
   }
   updateToggle();
+
+  // ─── 드래그 리사이즈 로직 ──────────────────────────────────
+  let isResizing = false;
+
+  resizeHandle.addEventListener('mousedown', (e) => {
+    isResizing = true;
+    panel.classList.add('no-transition');
+    document.body.style.cursor = 'ew-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isResizing) return;
+    const newWidth = Math.min(getMaxWidth(), Math.max(MIN_WIDTH, window.innerWidth - e.clientX));
+    panelWidth = newWidth;
+    panel.style.width = `${panelWidth}px`;
+    if (!collapsed) updateToggle();
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!isResizing) return;
+    isResizing = false;
+    panel.classList.remove('no-transition');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
 
   // ─── 토글 버튼 ─────────────────────────────────────────────
   toggle.addEventListener('click', () => {

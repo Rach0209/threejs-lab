@@ -195,6 +195,13 @@ export const LESSONS = [
     fileKey: '27-skinned-mesh',
     file: () => import('../lessons/27-skinned-mesh.js'),
   },
+  {
+    id: '28',
+    title: 'CSG 불리언 연산',
+    desc: 'UNION / SUBTRACTION / INTERSECTION, three-bvh-csg',
+    fileKey: '28-csg',
+    file: () => import('../lessons/28-csg.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

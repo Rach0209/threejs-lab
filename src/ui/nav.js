@@ -125,6 +125,13 @@ export const LESSONS = [
     fileKey: '17-toon-shading',
     file: () => import('../lessons/17-toon-shading.js'),
   },
+  {
+    id: '18',
+    title: 'Raycasting 심화',
+    desc: '드래그 이동, 오브젝트 배치/삭제, 격자 스냅',
+    fileKey: '18-raycasting-advanced',
+    file: () => import('../lessons/18-raycasting-advanced.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

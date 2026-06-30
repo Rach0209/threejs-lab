@@ -146,6 +146,13 @@ export const LESSONS = [
     fileKey: '20-shadows',
     file: () => import('../lessons/20-shadows.js'),
   },
+  {
+    id: '21',
+    title: 'LOD (Level of Detail)',
+    desc: 'THREE.LOD, 거리별 메시 교체, 폴리곤 최적화',
+    fileKey: '21-lod',
+    file: () => import('../lessons/21-lod.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

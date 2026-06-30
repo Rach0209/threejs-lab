@@ -280,6 +280,22 @@ canvas {
   z-index: 100;
 }
 
+/* 14 Environment Map */
+#env-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 15 애니메이션 시스템 */
+#anim-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
 /* 12 후처리 — 컨트롤 패널 */
 #pp-ui {
   position: fixed;

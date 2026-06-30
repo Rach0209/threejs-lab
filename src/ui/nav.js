@@ -104,6 +104,13 @@ export const LESSONS = [
     fileKey: '14-environment-map',
     file: () => import('../lessons/14-environment-map.js'),
   },
+  {
+    id: '15',
+    title: '애니메이션 시스템',
+    desc: 'AnimationMixer, KeyframeTrack, Morph Targets',
+    fileKey: '15-animation',
+    file: () => import('../lessons/15-animation.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

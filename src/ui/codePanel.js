@@ -92,6 +92,7 @@ export function createCodePanel() {
   resizeHandle.addEventListener('mousedown', (e) => {
     isResizing = true;
     panel.classList.add('no-transition');
+    toggle.style.transition = 'none'; // 드래그 중 토글 버튼도 즉시 이동
     document.body.style.cursor = 'ew-resize';
     document.body.style.userSelect = 'none';
     e.preventDefault();
@@ -109,6 +110,7 @@ export function createCodePanel() {
     if (!isResizing) return;
     isResizing = false;
     panel.classList.remove('no-transition');
+    toggle.style.transition = ''; // transition 복원
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
   });
@@ -117,6 +119,10 @@ export function createCodePanel() {
   toggle.addEventListener('click', () => {
     collapsed = !collapsed;
     panel.classList.toggle('collapsed', collapsed);
+    // 드래그로 인라인 width가 설정된 경우 CSS .collapsed(width:0)보다 우선순위가 높아짐.
+    // 접을 때는 인라인 width를 제거해 CSS가 적용되게 하고,
+    // 펼칠 때는 마지막 드래그 너비로 복원.
+    panel.style.width = collapsed ? '' : `${panelWidth}px`;
     updateToggle();
   });
 

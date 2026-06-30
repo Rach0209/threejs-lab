@@ -97,6 +97,13 @@ export const LESSONS = [
     fileKey: '13-instancing',
     file: () => import('../lessons/13-instancing.js'),
   },
+  {
+    id: '14',
+    title: 'Environment Map / IBL',
+    desc: '이미지 기반 조명, PBR 재질 비교',
+    fileKey: '14-environment-map',
+    file: () => import('../lessons/14-environment-map.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

@@ -153,6 +153,13 @@ export const LESSONS = [
     fileKey: '21-lod',
     file: () => import('../lessons/21-lod.js'),
   },
+  {
+    id: '22',
+    title: 'Sprite / Billboard',
+    desc: 'SpriteMaterial, 이름표/체력바, 아틀라스 애니메이션',
+    fileKey: '22-sprites',
+    file: () => import('../lessons/22-sprites.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

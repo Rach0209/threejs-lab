@@ -65,6 +65,9 @@ export function createCodePanel() {
   const codeFilename = panel.querySelector('#code-filename');
   const copyBtn      = panel.querySelector('#copy-btn');
 
+  // 복사용 원본 소스 — DOM 속성 대신 JS 변수로 관리 (DOM에 노출되면 콘솔에 전체 출력됨)
+  let rawSource = '';
+
   // ─── 리사이즈 핸들 ─────────────────────────────────────────
   const resizeHandle = document.createElement('div');
   resizeHandle.className = 'resize-handle';
@@ -119,9 +122,8 @@ export function createCodePanel() {
 
   // ─── 복사 버튼 ─────────────────────────────────────────────
   copyBtn.addEventListener('click', async () => {
-    const raw = codeBlock.dataset.raw || '';
-    if (!raw) return;
-    await navigator.clipboard.writeText(raw);
+    if (!rawSource) return;
+    await navigator.clipboard.writeText(rawSource);
     copyBtn.textContent = '✓ 복사됨';
     setTimeout(() => { copyBtn.textContent = '⎘ 복사'; }, 1500);
   });
@@ -141,10 +143,12 @@ export function createCodePanel() {
     // 파일 내용 가져오기 (문자열)
     const source = await loader();
 
-    // 원본 텍스트 저장 (복사용)
-    codeBlock.dataset.raw = source;
+    // 원본 소스 보관 (클로저 변수 — DOM 속성에 넣으면 콘솔에 전체 출력됨)
+    rawSource = source;
 
-    // highlightElement()는 .hljs 클래스를 자동으로 붙여줘서 테마 색상이 정상 적용됨
+    // hljs는 data-highlighted="yes"가 있으면 재하이라이팅을 거부하고 경고를 찍음
+    // 레슨 전환 시 같은 엘리먼트를 재사용하므로 먼저 리셋 필요
+    delete codeBlock.dataset.highlighted;
     codeBlock.textContent = source;
     hljs.highlightElement(codeBlock);
 

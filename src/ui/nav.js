@@ -83,6 +83,13 @@ export const LESSONS = [
     fileKey: '11-math-viz',
     file: () => import('../lessons/11-math-viz.js'),
   },
+  {
+    id: '12',
+    title: '후처리 효과',
+    desc: 'EffectComposer, Bloom, FilmPass',
+    fileKey: '12-postprocessing',
+    file: () => import('../lessons/12-postprocessing.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

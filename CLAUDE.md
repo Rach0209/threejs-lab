@@ -40,17 +40,9 @@ src/
     nav.js         # 왼쪽 레슨 네비게이터 (LESSONS 배열 포함)
     codePanel.js   # 오른쪽 소스 코드 패널 (highlight.js)
   lessons/
-    01-geometry.js
-    02-materials.js
-    03-lights.js
-    04-solar-system.js
-    05-textures.js
-    06-interaction.js
-    07-model-loader.js
-    08-shaders.js
-    09-physics.js
-    10-particles.js
-    11-math-viz.js
+    01-geometry.js       ~ 11-math-viz.js   # 기초 레슨
+    12-postprocessing.js ~ 29-decal.js       # 중급 레슨
+    30-fog.js            ~ 37-character.js   # 고급 레슨 (최신)
 ```
 
 ## 레슨 구조 규칙

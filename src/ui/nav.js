@@ -90,6 +90,13 @@ export const LESSONS = [
     fileKey: '12-postprocessing',
     file: () => import('../lessons/12-postprocessing.js'),
   },
+  {
+    id: '13',
+    title: 'InstancedMesh',
+    desc: '4,000개를 draw call 1번으로 렌더링',
+    fileKey: '13-instancing',
+    file: () => import('../lessons/13-instancing.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

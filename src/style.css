@@ -272,6 +272,14 @@ canvas {
 /* 08 셰이더 */
 #shader-info { pointer-events: none; }
 
+/* 13 InstancedMesh */
+#inst-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
 /* 12 후처리 — 컨트롤 패널 */
 #pp-ui {
   position: fixed;

@@ -139,6 +139,13 @@ export const LESSONS = [
     fileKey: '19-reflection',
     file: () => import('../lessons/19-reflection.js'),
   },
+  {
+    id: '20',
+    title: 'Shadow 심화',
+    desc: 'ShadowMap 종류, Bias, Shadow Camera, PCF/VSM',
+    fileKey: '20-shadows',
+    file: () => import('../lessons/20-shadows.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

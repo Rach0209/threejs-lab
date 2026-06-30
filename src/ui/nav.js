@@ -202,6 +202,13 @@ export const LESSONS = [
     fileKey: '28-csg',
     file: () => import('../lessons/28-csg.js'),
   },
+  {
+    id: '29',
+    title: 'Decal (데칼)',
+    desc: 'DecalGeometry, 총알구멍·페인트·스티커 클릭 부착',
+    fileKey: '29-decal',
+    file: () => import('../lessons/29-decal.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

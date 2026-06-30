@@ -214,11 +214,11 @@ canvas {
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 10px;
-  padding: 14px 16px;
+  padding: 18px 20px;
   color: #e2e8f0;
   font-size: 13px;
   line-height: 1.7;
-  min-width: 200px;
+  min-width: 360px;
   pointer-events: none;
 }
 
@@ -272,6 +272,228 @@ canvas {
 /* 08 셰이더 */
 #shader-info { pointer-events: none; }
 
+/* 13 InstancedMesh */
+#inst-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 14 Environment Map */
+#env-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 15 애니메이션 시스템 */
+#anim-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 16 절차적 지형 */
+#terrain-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 17 Toon / Cel Shading */
+#toon-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 18 Raycasting 심화 */
+#raycast-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 19 Reflection & Refraction */
+#reflect-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 20 Shadow 심화 */
+#shadow-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 21 LOD */
+#lod-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 22 Sprite / Billboard */
+#sprite-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 23 커스텀 BufferGeometry */
+#bufgeo-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 24 3D 공간음 */
+#audio-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 25 RenderTarget / FBO */
+#rt-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 26 GPGPU */
+#gpgpu-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 27 SkinnedMesh */
+#skin-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 28 CSG */
+#csg-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 29 Decal */
+#decal-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 30 Fog */
+#fog-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 31 Water */
+#water-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 32 Post-Processing */
+#pp-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 33 EnvMap */
+#envmap-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 34 Instancing */
+#inst-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
+/* 35 LOD */
+#lod-ui { position: fixed; bottom: 20px; left: 280px; z-index: 100; }
+
+/* 36 Shadow */
+#shadow-ui { position: fixed; bottom: 20px; left: 280px; z-index: 100; }
+
+/* 37 Noise */
+#noise-ui { position: fixed; bottom: 20px; left: 280px; z-index: 100; }
+
+/* 38 Character */
+#char-ui { position: fixed; bottom: 20px; left: 280px; z-index: 100; }
+
+/* 12 후처리 — 컨트롤 패널 */
+#pp-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px; /* nav 패널 옆 */
+  z-index: 100;
+}
+
+.pp-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  font-size: 12px;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.pp-row span:first-child { min-width: 110px; white-space: nowrap; color: #cbd5e1; }
+.pp-row span:last-child  { min-width: 32px; text-align: right; color: #6366f1; font-family: monospace; }
+
+.pp-row input[type="range"] {
+  flex: 1;
+  accent-color: #6366f1;
+  cursor: pointer;
+}
+
+.pp-row input[type="checkbox"] {
+  accent-color: #6366f1;
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
 /* ── 네비게이터 패널 ────────────────────────────────────────── */
 #nav-panel {
   position: fixed;
@@ -315,16 +537,28 @@ canvas {
   flex-shrink: 0;
 }
 
-.nav-logo {
+.nav-home-btn {
   font-size: 20px;
   color: #6366f1;
   flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.15s, transform 0.15s;
+}
+.nav-home-btn:hover {
+  color: #a5b4fc;
+  transform: rotate(30deg) scale(1.15);
 }
 
 .nav-title {
   flex: 1;
   white-space: nowrap;
   transition: opacity 0.2s;
+  cursor: pointer;
+  user-select: none;
 }
 
 /* 토글 버튼 — body에 직접 붙어있고 JS로 위치 제어 */
@@ -358,6 +592,22 @@ canvas {
   overflow-y: auto;
   padding: 16px 8px;
   transition: opacity 0.2s;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.4) transparent;
+}
+
+.nav-body::-webkit-scrollbar {
+  width: 4px;
+}
+.nav-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.nav-body::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.4);
+  border-radius: 2px;
+}
+.nav-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.7);
 }
 
 .nav-section-title {
@@ -405,6 +655,45 @@ canvas {
 .lesson-btn:hover {
   background: rgba(255, 255, 255, 0.05);
   color: #e2e8f0;
+}
+
+/* 레슨 호버 툴팁 (body에 fixed로 띄움) */
+#nav-lesson-tooltip {
+  display: none;
+  position: fixed;
+  background: rgba(15, 23, 42, 0.97);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: 8px;
+  padding: 10px 14px;
+  min-width: 200px;
+  max-width: 260px;
+  z-index: 9999;
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+#nav-lesson-tooltip::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-right-color: rgba(99, 102, 241, 0.4);
+}
+
+#nav-lesson-tooltip strong {
+  display: block;
+  font-size: 15px;
+  color: #f1f5f9;
+  margin-bottom: 6px;
+}
+
+#nav-lesson-tooltip small {
+  display: block;
+  font-size: 13px;
+  color: #94a3b8;
+  line-height: 1.6;
 }
 
 .lesson-id {

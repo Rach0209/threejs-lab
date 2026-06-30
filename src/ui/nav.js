@@ -83,6 +83,188 @@ export const LESSONS = [
     fileKey: '11-math-viz',
     file: () => import('../lessons/11-math-viz.js'),
   },
+  {
+    id: '12',
+    title: '후처리 효과',
+    desc: 'EffectComposer, Bloom, FilmPass',
+    fileKey: '12-postprocessing',
+    file: () => import('../lessons/12-postprocessing.js'),
+  },
+  {
+    id: '13',
+    title: 'InstancedMesh',
+    desc: '4,000개를 draw call 1번으로 렌더링',
+    fileKey: '13-instancing',
+    file: () => import('../lessons/13-instancing.js'),
+  },
+  {
+    id: '14',
+    title: 'Environment Map / IBL',
+    desc: '이미지 기반 조명, PBR 재질 비교',
+    fileKey: '14-environment-map',
+    file: () => import('../lessons/14-environment-map.js'),
+  },
+  {
+    id: '15',
+    title: '애니메이션 시스템',
+    desc: 'AnimationMixer, KeyframeTrack, Morph Targets',
+    fileKey: '15-animation',
+    file: () => import('../lessons/15-animation.js'),
+  },
+  {
+    id: '16',
+    title: '절차적 지형 생성',
+    desc: 'Simplex Noise, FBM, vertexColors, 높이맵',
+    fileKey: '16-terrain',
+    file: () => import('../lessons/16-terrain.js'),
+  },
+  {
+    id: '17',
+    title: 'Toon / Cel Shading',
+    desc: 'MeshToonMaterial, GradientMap, BackFace 외곽선, GLSL',
+    fileKey: '17-toon-shading',
+    file: () => import('../lessons/17-toon-shading.js'),
+  },
+  {
+    id: '18',
+    title: 'Raycasting 심화',
+    desc: '드래그 이동, 오브젝트 배치/삭제, 격자 스냅',
+    fileKey: '18-raycasting-advanced',
+    file: () => import('../lessons/18-raycasting-advanced.js'),
+  },
+  {
+    id: '19',
+    title: 'Reflection & Refraction',
+    desc: 'CubeCamera, 실시간 반사, MeshPhysicalMaterial 굴절',
+    fileKey: '19-reflection',
+    file: () => import('../lessons/19-reflection.js'),
+  },
+  {
+    id: '20',
+    title: 'Shadow 심화',
+    desc: 'ShadowMap 종류, Bias, Shadow Camera, PCF/VSM',
+    fileKey: '20-shadows',
+    file: () => import('../lessons/20-shadows.js'),
+  },
+  {
+    id: '21',
+    title: 'LOD (Level of Detail)',
+    desc: 'THREE.LOD, 거리별 메시 교체, 폴리곤 최적화',
+    fileKey: '21-lod',
+    file: () => import('../lessons/21-lod.js'),
+  },
+  {
+    id: '22',
+    title: 'Sprite / Billboard',
+    desc: 'SpriteMaterial, 이름표/체력바, 아틀라스 애니메이션',
+    fileKey: '22-sprites',
+    file: () => import('../lessons/22-sprites.js'),
+  },
+  {
+    id: '23',
+    title: '커스텀 BufferGeometry',
+    desc: 'Float32Array, 튜브/뫼비우스/파라메트릭 곡면 직접 구성',
+    fileKey: '23-buffer-geometry',
+    file: () => import('../lessons/23-buffer-geometry.js'),
+  },
+  {
+    id: '24',
+    title: '3D 공간음 (Web Audio)',
+    desc: 'AudioListener, PositionalAudio, FFT 시각화',
+    fileKey: '24-audio',
+    file: () => import('../lessons/24-audio.js'),
+  },
+  {
+    id: '25',
+    title: 'RenderTarget / FBO',
+    desc: 'CCTV 모니터, 포탈, 미니맵 — 텍스처에 씬 렌더링',
+    fileKey: '25-render-target',
+    file: () => import('../lessons/25-render-target.js'),
+  },
+  {
+    id: '26',
+    title: 'GPGPU 파티클',
+    desc: 'DataTexture + ping-pong RenderTarget, 16K 파티클 GPU 시뮬',
+    fileKey: '26-gpgpu',
+    file: () => import('../lessons/26-gpgpu.js'),
+  },
+  {
+    id: '27',
+    title: 'SkinnedMesh / Bone',
+    desc: 'Skeleton, skinIndex/Weight, AnimationMixer 키프레임',
+    fileKey: '27-skinned-mesh',
+    file: () => import('../lessons/27-skinned-mesh.js'),
+  },
+  {
+    id: '28',
+    title: 'CSG 불리언 연산',
+    desc: 'UNION / SUBTRACTION / INTERSECTION, three-bvh-csg',
+    fileKey: '28-csg',
+    file: () => import('../lessons/28-csg.js'),
+  },
+  {
+    id: '29',
+    title: 'Decal (데칼)',
+    desc: 'DecalGeometry, 총알구멍·페인트·스티커 클릭 부착',
+    fileKey: '29-decal',
+    file: () => import('../lessons/29-decal.js'),
+  },
+  {
+    id: '30',
+    title: 'Fog / 대기 효과',
+    desc: 'FogExp2, 하늘 돔 셰이더, 날씨 전환 (맑음→비→야간)',
+    fileKey: '30-fog',
+    file: () => import('../lessons/30-fog.js'),
+  },
+  {
+    id: '31',
+    title: 'Water — Gerstner 파도',
+    desc: 'GLSL 파도 셰이더, Fresnel 반사, 거품, 섬 환경',
+    fileKey: '31-water',
+    file: () => import('../lessons/31-water.js'),
+  },
+  {
+    id: '32',
+    title: 'Post-Processing',
+    desc: 'EffectComposer, Bloom, 색수차, 비네팅, SMAA',
+    fileKey: '32-postprocessing',
+    file: () => import('../lessons/32-postprocessing.js'),
+  },
+  {
+    id: '33',
+    title: 'EnvMap / IBL',
+    desc: 'CubeCamera 실시간 반사, 금속·유리 PBR, IOR 굴절',
+    fileKey: '33-envmap',
+    file: () => import('../lessons/33-envmap.js'),
+  },
+  {
+    id: '34',
+    title: 'InstancedMesh',
+    desc: '드로우콜 1번으로 수천 오브젝트 렌더링, 숲·파티클·그리드',
+    fileKey: '34-instancing',
+    file: () => import('../lessons/34-instancing.js'),
+  },
+  {
+    id: '35',
+    title: 'LOD — Level of Detail',
+    desc: '거리별 메시 복잡도 자동 전환, 빌보드 컬링, 나무숲 최적화',
+    fileKey: '35-lod',
+    file: () => import('../lessons/35-lod.js'),
+  },
+  {
+    id: '36',
+    title: 'Procedural Noise',
+    desc: 'Perlin Noise, FBM, 지형·불꽃·대리석·구름 절차적 생성',
+    fileKey: '36-noise',
+    file: () => import('../lessons/36-noise.js'),
+  },
+  {
+    id: '37',
+    title: 'Character Controller',
+    desc: 'WASD 이동, 점프, 중력, 3인칭 카메라, 플랫폼 충돌',
+    fileKey: '37-character',
+    file: () => import('../lessons/37-character.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)
@@ -96,7 +278,7 @@ export function createNav(onSelect) {
   panel.id = 'nav-panel';
   panel.innerHTML = `
     <div class="nav-header">
-      <span class="nav-logo">⬡</span>
+      <button class="nav-home-btn" title="홈으로 (새로고침)">⬡</button>
       <span class="nav-title">Web 3D Lab</span>
     </div>
     <div class="nav-body">
@@ -105,6 +287,11 @@ export function createNav(onSelect) {
     </div>
   `;
   document.body.appendChild(panel);
+
+  // 로고 / 타이틀 클릭 → 새로고침
+  const reload = () => window.location.reload();
+  panel.querySelector('.nav-home-btn').addEventListener('click', reload);
+  panel.querySelector('.nav-title').addEventListener('click', reload);
 
   // ─── 토글 버튼 — 패널 바깥에 독립적으로 배치 ─────────────────
   //  패널 안에 두면 패널이 접힐 때 같이 숨어버리므로
@@ -131,6 +318,27 @@ export function createNav(onSelect) {
 
   updateTogglePos(); // 초기 위치 설정
 
+  // ─── 툴팁 (body에 fixed로 띄움) ────────────────────────────
+  const tooltip = document.createElement('div');
+  tooltip.id = 'nav-lesson-tooltip';
+  document.body.appendChild(tooltip);
+
+  function showTooltip(lesson, rect) {
+    tooltip.innerHTML = `<strong>${lesson.title}</strong><small>${lesson.desc}</small>`;
+    tooltip.style.display = 'block';
+    const left = rect.right + 8;
+    const top  = rect.top + rect.height / 2;
+    tooltip.style.left = left + 'px';
+    // 화면 아래로 넘치면 위로 올림
+    const th = tooltip.offsetHeight;
+    const clampedTop = Math.min(top - th / 2, window.innerHeight - th - 8);
+    tooltip.style.top = Math.max(8, clampedTop) + 'px';
+  }
+
+  function hideTooltip() {
+    tooltip.style.display = 'none';
+  }
+
   // ─── 레슨 버튼 생성 ─────────────────────────────────────────
   const list = panel.querySelector('#lesson-list');
   LESSONS.forEach((lesson) => {
@@ -146,10 +354,13 @@ export function createNav(onSelect) {
         </span>
       </button>
     `;
-    li.querySelector('.lesson-btn').addEventListener('click', () => {
+    const btn = li.querySelector('.lesson-btn');
+    btn.addEventListener('click', () => {
       setActive(lesson.id);
       onSelect(lesson);
     });
+    btn.addEventListener('mouseenter', () => showTooltip(lesson, btn.getBoundingClientRect()));
+    btn.addEventListener('mouseleave', hideTooltip);
     list.appendChild(li);
   });
 

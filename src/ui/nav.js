@@ -160,6 +160,13 @@ export const LESSONS = [
     fileKey: '22-sprites',
     file: () => import('../lessons/22-sprites.js'),
   },
+  {
+    id: '23',
+    title: '커스텀 BufferGeometry',
+    desc: 'Float32Array, 튜브/뫼비우스/파라메트릭 곡면 직접 구성',
+    fileKey: '23-buffer-geometry',
+    file: () => import('../lessons/23-buffer-geometry.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

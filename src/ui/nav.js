@@ -167,6 +167,13 @@ export const LESSONS = [
     fileKey: '23-buffer-geometry',
     file: () => import('../lessons/23-buffer-geometry.js'),
   },
+  {
+    id: '24',
+    title: '3D 공간음 (Web Audio)',
+    desc: 'AudioListener, PositionalAudio, FFT 시각화',
+    fileKey: '24-audio',
+    file: () => import('../lessons/24-audio.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

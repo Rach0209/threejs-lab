@@ -118,6 +118,13 @@ export const LESSONS = [
     fileKey: '16-terrain',
     file: () => import('../lessons/16-terrain.js'),
   },
+  {
+    id: '17',
+    title: 'Toon / Cel Shading',
+    desc: 'MeshToonMaterial, GradientMap, BackFace 외곽선, GLSL',
+    fileKey: '17-toon-shading',
+    file: () => import('../lessons/17-toon-shading.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

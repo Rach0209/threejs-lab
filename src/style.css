@@ -304,6 +304,14 @@ canvas {
   z-index: 100;
 }
 
+/* 17 Toon / Cel Shading */
+#toon-ui {
+  position: fixed;
+  bottom: 20px;
+  left: 280px;
+  z-index: 100;
+}
+
 /* 12 후처리 — 컨트롤 패널 */
 #pp-ui {
   position: fixed;

@@ -181,6 +181,13 @@ export const LESSONS = [
     fileKey: '25-render-target',
     file: () => import('../lessons/25-render-target.js'),
   },
+  {
+    id: '26',
+    title: 'GPGPU 파티클',
+    desc: 'DataTexture + ping-pong RenderTarget, 16K 파티클 GPU 시뮬',
+    fileKey: '26-gpgpu',
+    file: () => import('../lessons/26-gpgpu.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

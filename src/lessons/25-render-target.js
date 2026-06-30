@@ -334,6 +334,22 @@ export function init(renderer) {
   }
   renderer.domElement.addEventListener('click', onCanvasClick);
 
+  // 미니맵 위에서 드래그 시 OrbitControls 비활성화
+  //  mousedown → 미니맵 영역이면 controls.enabled = false
+  //  mouseup   → 항상 복구
+  function isInMinimap(e) {
+    if (!minimapShow) return false;
+    const W = window.innerWidth, H = window.innerHeight;
+    const cssLeft = W - MINI_SIZE - 10;
+    const cssTop  = H - MINI_SIZE - 10;
+    return e.clientX >= cssLeft && e.clientX <= cssLeft + MINI_SIZE &&
+           e.clientY >= cssTop  && e.clientY <= cssTop  + MINI_SIZE;
+  }
+  function onMouseDown(e) { if (isInMinimap(e)) controls.enabled = false; }
+  function onMouseUp()    { controls.enabled = true; }
+  renderer.domElement.addEventListener('mousedown', onMouseDown);
+  window.addEventListener('mouseup', onMouseUp);
+
   // ─── 렌더링 루프 ──────────────────────────────────────────
   const timer = new Timer();
   let animId;
@@ -433,6 +449,8 @@ export function init(renderer) {
     portalTarget.dispose();
 
     renderer.domElement.removeEventListener('click', onCanvasClick);
+    renderer.domElement.removeEventListener('mousedown', onMouseDown);
+    window.removeEventListener('mouseup', onMouseUp);
     document.body.removeChild(minimapOverlay);
     waypointPins.forEach(p => { p.geometry.dispose(); mainScene.remove(p); });
     pinGeo.dispose(); pinMat.dispose();

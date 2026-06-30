@@ -188,6 +188,13 @@ export const LESSONS = [
     fileKey: '26-gpgpu',
     file: () => import('../lessons/26-gpgpu.js'),
   },
+  {
+    id: '27',
+    title: 'SkinnedMesh / Bone',
+    desc: 'Skeleton, skinIndex/Weight, AnimationMixer 키프레임',
+    fileKey: '27-skinned-mesh',
+    file: () => import('../lessons/27-skinned-mesh.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

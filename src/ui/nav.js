@@ -132,6 +132,13 @@ export const LESSONS = [
     fileKey: '18-raycasting-advanced',
     file: () => import('../lessons/18-raycasting-advanced.js'),
   },
+  {
+    id: '19',
+    title: 'Reflection & Refraction',
+    desc: 'CubeCamera, 실시간 반사, MeshPhysicalMaterial 굴절',
+    fileKey: '19-reflection',
+    file: () => import('../lessons/19-reflection.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

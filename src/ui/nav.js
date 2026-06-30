@@ -111,6 +111,13 @@ export const LESSONS = [
     fileKey: '15-animation',
     file: () => import('../lessons/15-animation.js'),
   },
+  {
+    id: '16',
+    title: '절차적 지형 생성',
+    desc: 'Simplex Noise, FBM, vertexColors, 높이맵',
+    fileKey: '16-terrain',
+    file: () => import('../lessons/16-terrain.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

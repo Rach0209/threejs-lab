@@ -174,6 +174,13 @@ export const LESSONS = [
     fileKey: '24-audio',
     file: () => import('../lessons/24-audio.js'),
   },
+  {
+    id: '25',
+    title: 'RenderTarget / FBO',
+    desc: 'CCTV 모니터, 포탈, 미니맵 — 텍스처에 씬 렌더링',
+    fileKey: '25-render-target',
+    file: () => import('../lessons/25-render-target.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

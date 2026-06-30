@@ -169,7 +169,7 @@ export function init(renderer) {
   const ui = document.createElement('div');
   ui.id = 'pp-ui';
   ui.innerHTML = `
-    <div class="info-box" style="pointer-events:auto; min-width:240px;">
+    <div class="info-box" style="pointer-events:auto;">
       <p><strong>후처리 효과 (Post-Processing)</strong></p>
       <hr style="border-color:#334155;margin:8px 0">
 

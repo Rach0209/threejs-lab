@@ -209,6 +209,62 @@ export const LESSONS = [
     fileKey: '29-decal',
     file: () => import('../lessons/29-decal.js'),
   },
+  {
+    id: '30',
+    title: 'Fog / 대기 효과',
+    desc: 'FogExp2, 하늘 돔 셰이더, 날씨 전환 (맑음→비→야간)',
+    fileKey: '30-fog',
+    file: () => import('../lessons/30-fog.js'),
+  },
+  {
+    id: '31',
+    title: 'Water — Gerstner 파도',
+    desc: 'GLSL 파도 셰이더, Fresnel 반사, 거품, 섬 환경',
+    fileKey: '31-water',
+    file: () => import('../lessons/31-water.js'),
+  },
+  {
+    id: '32',
+    title: 'Post-Processing',
+    desc: 'EffectComposer, Bloom, 색수차, 비네팅, SMAA',
+    fileKey: '32-postprocessing',
+    file: () => import('../lessons/32-postprocessing.js'),
+  },
+  {
+    id: '33',
+    title: 'EnvMap / IBL',
+    desc: 'CubeCamera 실시간 반사, 금속·유리 PBR, IOR 굴절',
+    fileKey: '33-envmap',
+    file: () => import('../lessons/33-envmap.js'),
+  },
+  {
+    id: '34',
+    title: 'InstancedMesh',
+    desc: '드로우콜 1번으로 수천 오브젝트 렌더링, 숲·파티클·그리드',
+    fileKey: '34-instancing',
+    file: () => import('../lessons/34-instancing.js'),
+  },
+  {
+    id: '35',
+    title: 'LOD — Level of Detail',
+    desc: '거리별 메시 복잡도 자동 전환, 빌보드 컬링, 나무숲 최적화',
+    fileKey: '35-lod',
+    file: () => import('../lessons/35-lod.js'),
+  },
+  {
+    id: '36',
+    title: 'Procedural Noise',
+    desc: 'Perlin Noise, FBM, 지형·불꽃·대리석·구름 절차적 생성',
+    fileKey: '36-noise',
+    file: () => import('../lessons/36-noise.js'),
+  },
+  {
+    id: '37',
+    title: 'Character Controller',
+    desc: 'WASD 이동, 점프, 중력, 3인칭 카메라, 플랫폼 충돌',
+    fileKey: '37-character',
+    file: () => import('../lessons/37-character.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)
@@ -222,7 +278,7 @@ export function createNav(onSelect) {
   panel.id = 'nav-panel';
   panel.innerHTML = `
     <div class="nav-header">
-      <span class="nav-logo">⬡</span>
+      <button class="nav-home-btn" title="홈으로 (새로고침)">⬡</button>
       <span class="nav-title">Web 3D Lab</span>
     </div>
     <div class="nav-body">
@@ -231,6 +287,11 @@ export function createNav(onSelect) {
     </div>
   `;
   document.body.appendChild(panel);
+
+  // 로고 / 타이틀 클릭 → 새로고침
+  const reload = () => window.location.reload();
+  panel.querySelector('.nav-home-btn').addEventListener('click', reload);
+  panel.querySelector('.nav-title').addEventListener('click', reload);
 
   // ─── 토글 버튼 — 패널 바깥에 독립적으로 배치 ─────────────────
   //  패널 안에 두면 패널이 접힐 때 같이 숨어버리므로
@@ -257,6 +318,27 @@ export function createNav(onSelect) {
 
   updateTogglePos(); // 초기 위치 설정
 
+  // ─── 툴팁 (body에 fixed로 띄움) ────────────────────────────
+  const tooltip = document.createElement('div');
+  tooltip.id = 'nav-lesson-tooltip';
+  document.body.appendChild(tooltip);
+
+  function showTooltip(lesson, rect) {
+    tooltip.innerHTML = `<strong>${lesson.title}</strong><small>${lesson.desc}</small>`;
+    tooltip.style.display = 'block';
+    const left = rect.right + 8;
+    const top  = rect.top + rect.height / 2;
+    tooltip.style.left = left + 'px';
+    // 화면 아래로 넘치면 위로 올림
+    const th = tooltip.offsetHeight;
+    const clampedTop = Math.min(top - th / 2, window.innerHeight - th - 8);
+    tooltip.style.top = Math.max(8, clampedTop) + 'px';
+  }
+
+  function hideTooltip() {
+    tooltip.style.display = 'none';
+  }
+
   // ─── 레슨 버튼 생성 ─────────────────────────────────────────
   const list = panel.querySelector('#lesson-list');
   LESSONS.forEach((lesson) => {
@@ -272,10 +354,13 @@ export function createNav(onSelect) {
         </span>
       </button>
     `;
-    li.querySelector('.lesson-btn').addEventListener('click', () => {
+    const btn = li.querySelector('.lesson-btn');
+    btn.addEventListener('click', () => {
       setActive(lesson.id);
       onSelect(lesson);
     });
+    btn.addEventListener('mouseenter', () => showTooltip(lesson, btn.getBoundingClientRect()));
+    btn.addEventListener('mouseleave', hideTooltip);
     list.appendChild(li);
   });
 

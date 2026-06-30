@@ -141,7 +141,7 @@ export function init(renderer) {
   const ui = document.createElement('div');
   ui.id = 'lod-ui';
   ui.innerHTML = `
-    <div class="info-box" style="pointer-events:auto; min-width:250px;">
+    <div class="info-box" style="pointer-events:auto;">
       <p><strong>LOD (Level of Detail)</strong></p>
       <hr style="border-color:#334155;margin:8px 0">
 

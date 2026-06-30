@@ -155,7 +155,7 @@ export function init(renderer) {
   const ui = document.createElement('div');
   ui.id = 'shadow-ui';
   ui.innerHTML = `
-    <div class="info-box" style="pointer-events:auto; min-width:260px;">
+    <div class="info-box" style="pointer-events:auto;">
       <p><strong>Shadow 심화</strong></p>
       <hr style="border-color:#334155;margin:8px 0">
 

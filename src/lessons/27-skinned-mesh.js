@@ -191,7 +191,7 @@ export function init(renderer) {
   const ui = document.createElement('div');
   ui.id = 'skin-ui';
   ui.innerHTML = `
-    <div class="info-box" style="pointer-events:auto;min-width:250px;">
+    <div class="info-box" style="pointer-events:auto;">
       <p><strong>SkinnedMesh / Bone</strong></p>
       <hr style="border-color:#334155;margin:8px 0">
 

@@ -212,7 +212,7 @@ export function init(renderer) {
   const ui = document.createElement('div');
   ui.id = 'rt-ui';
   ui.innerHTML = `
-    <div class="info-box" style="pointer-events:auto;min-width:240px;">
+    <div class="info-box" style="pointer-events:auto;">
       <p><strong>RenderTarget / FBO</strong></p>
       <hr style="border-color:#334155;margin:8px 0">
 

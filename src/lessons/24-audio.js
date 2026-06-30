@@ -148,7 +148,7 @@ export function init(renderer) {
   const ui = document.createElement('div');
   ui.id = 'audio-ui';
   ui.innerHTML = `
-    <div class="info-box" style="pointer-events:auto; min-width:250px;">
+    <div class="info-box" style="pointer-events:auto;">
       <p><strong>3D 공간음 (Web Audio API)</strong></p>
 
       <div id="audio-start-box" style="margin:8px 0;padding:10px;border-radius:8px;

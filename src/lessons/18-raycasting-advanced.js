@@ -246,7 +246,7 @@ export function init(renderer) {
   const ui = document.createElement('div');
   ui.id = 'raycast-ui';
   ui.innerHTML = `
-    <div class="info-box" style="pointer-events:auto; min-width:240px;">
+    <div class="info-box" style="pointer-events:auto;">
       <p><strong>Raycasting 심화 — 씬 에디터</strong></p>
       <hr style="border-color:#334155;margin:8px 0">
 

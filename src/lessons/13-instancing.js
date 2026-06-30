@@ -123,7 +123,7 @@ export function init(renderer) {
   const ui = document.createElement('div');
   ui.id = 'inst-ui';
   ui.innerHTML = `
-    <div class="info-box" style="min-width:220px; pointer-events:auto;">
+    <div class="info-box" style="pointer-events:auto;">
       <p><strong>InstancedMesh</strong></p>
       <p id="inst-count">인스턴스: ${COUNT.toLocaleString()}개</p>
       <p id="inst-drawcall" style="color:#6366f1;">Draw call: <strong>1회</strong></p>

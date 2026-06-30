@@ -385,7 +385,7 @@ export function init(renderer) {
   const ui = document.createElement('div');
   ui.id = 'anim-ui';
   ui.innerHTML = `
-    <div class="info-box" style="pointer-events:auto; min-width:240px;">
+    <div class="info-box" style="pointer-events:auto;">
       <p><strong>애니메이션 시스템</strong></p>
       <hr style="border-color:#334155;margin:8px 0">
       <p style="color:#64748b;font-size:11px;margin-bottom:8px">AnimationMixer 클립</p>

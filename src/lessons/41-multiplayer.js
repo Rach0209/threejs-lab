@@ -261,7 +261,7 @@ export function init(renderer) {
 
   // ─── BroadcastChannel ────────────────────────────────────
   const channel = new BroadcastChannel(CHANNEL_NAME);
-  let txCount = 0, rxCount = 0, txPerSec = 0, rxPerSec = 0, statTimer = 0;
+  let txCount = 0, rxCount = 0, statTimer = 0;
 
   channel.onmessage = ({ data: msg }) => {
     if (msg.id === MY_ID) return;
@@ -298,7 +298,7 @@ export function init(renderer) {
     if (!text) return;
     channel.postMessage({ type: 'chat', id: MY_ID, color: MY_COLOR, text });
     myBubble = showBubble(myGroup, myBubble, text, MY_COLOR);
-    addChatLog(MY_ID, MY_COLOR, text, true);
+    addChatLog(MY_ID, MY_COLOR, text);
     txCount++;
   }
 
@@ -319,7 +319,7 @@ export function init(renderer) {
   `;
   chatInput.addEventListener('keydown', e => {
     e.stopImmediatePropagation();
-    if (e.code === 'Enter') {
+    if (e.code === 'Enter' && !e.isComposing) {
       sendChat(chatInput.value.trim());
       chatInput.style.display = 'none';
       chatInput.blur();
@@ -419,7 +419,7 @@ export function init(renderer) {
     elCount.textContent = 1 + remotePlayers.size;
   }
 
-  function addChatLog(id, colorHex, text, isMe = false) {
+  function addChatLog(id, colorHex, text) {
     const line = document.createElement('div');
     line.style.cssText = 'display:flex;gap:6px;align-items:baseline;word-break:break-all;';
     if (id) {

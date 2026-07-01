@@ -9,13 +9,13 @@
 //    - makeAction     : action 객체 → .send() / .onMessage = fn
 //    - 로비 패턴      : 숨겨진 공용 룸으로 방 목록 공유
 //    - 방장 승계      : 남은 피어 중 selfId 정렬 최솟값이 자동 방장
-//    - 상태 머신 동기화: 내 FSM 상태를 move 패킷에 실어 전송
-//                       → 원격 플레이어도 동일한 애니 재생
+//    - 상태 동기화    : FSM 상태를 move 패킷에 실어 전송
+//    - 이벤트 동기화  : 장풍 발사처럼 "순간" 이벤트는 별도 action으로 전송
 //
 //  조작:
 //    WASD   — 이동
 //    Space  — 점프
-//    F      — 공격
+//    F      — 장풍 발사
 //    Enter  — 채팅
 // ══════════════════════════════════════════════════════════════
 
@@ -31,9 +31,11 @@ const SYNC_MS      = 50;
 const ANNOUNCE_MS  = 2000;
 const ROOM_TIMEOUT = 6000;
 const BUBBLE_SEC   = 4.0;
-const JUMP_H       = 2.2;   // 점프 높이
-const JUMP_DUR     = 0.55;  // 점프 지속 시간 (초)
-const ATTACK_DUR   = 0.5;   // 공격 지속 시간 (초)
+const JUMP_H       = 2.2;
+const JUMP_DUR     = 0.55;
+const ATTACK_DUR   = 0.5;
+const PROJ_SPEED   = 16;
+const PROJ_MAXDIST = 26;
 
 const MY_COLOR = (() => {
   let h = 0;
@@ -43,11 +45,6 @@ const MY_COLOR = (() => {
 
 // ─── 유틸 ─────────────────────────────────────────────────────
 function hexStr(hex) { return '#' + hex.toString(16).padStart(6, '0'); }
-function colorFromId(id) {
-  let h = 0;
-  for (const c of id) h = (h * 31 + c.charCodeAt(0)) & 0xffffff;
-  return new THREE.Color().setHSL((Math.abs(h) % 360) / 360, 0.85, 0.6).getHex();
-}
 
 // ─── 이름 태그 Sprite ─────────────────────────────────────────
 function makeNameTag(label, colorHex) {
@@ -92,45 +89,27 @@ function makeBubble(text, colorHex) {
 function makePlayerMesh(colorHex, scene) {
   const color = new THREE.Color(colorHex);
   const group = new THREE.Group();
-
   const body = new THREE.Mesh(
     new THREE.CapsuleGeometry(0.38, 0.8, 4, 8),
     new THREE.MeshStandardMaterial({ color, roughness: 0.4 })
   );
-  body.position.y = 0.78; body.castShadow = true; group.add(body); // children[0]
-
+  body.position.y = 0.78; body.castShadow = true; group.add(body); // [0]
   const head = new THREE.Mesh(
     new THREE.SphereGeometry(0.28, 16, 16),
     new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.2, roughness: 0.3 })
   );
-  head.position.y = 1.72; head.castShadow = true; group.add(head); // children[1]
-
+  head.position.y = 1.72; head.castShadow = true; group.add(head); // [1]
   const eyeMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
   const eyeGeo = new THREE.SphereGeometry(0.06, 6, 6);
   [-0.12, 0.12].forEach(x => {
     const eye = new THREE.Mesh(eyeGeo, eyeMat);
-    eye.position.set(x, 1.74, -0.25); group.add(eye); // children[2,3]
+    eye.position.set(x, 1.74, -0.25); group.add(eye); // [2,3]
   });
-
   scene.add(group);
   return group;
 }
 
-// ─── 공격 이펙트 (충격파 링) ──────────────────────────────────
-const attackEffects = []; // { ring, group, t }
-
-function triggerAttackEffect(group) {
-  const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(0.5, 0.07, 6, 20),
-    new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 1 })
-  );
-  ring.position.set(0, 0.85, -0.6);
-  ring.rotation.x = Math.PI / 2;
-  group.add(ring);
-  attackEffects.push({ ring, group, t: 0 });
-}
-
-// ─── 공통 애니메이션 적용 ─────────────────────────────────────
+// ─── 캐릭터 애니메이션 ────────────────────────────────────────
 function applyAnim(group, state, jumpT, attackT) {
   const body = group.children[0];
   if (!body) return;
@@ -138,23 +117,31 @@ function applyAnim(group, state, jumpT, attackT) {
   if (state === 'jump') {
     const jt = Math.min(jumpT / JUMP_DUR, 1);
     group.position.y = Math.sin(jt * Math.PI) * JUMP_H;
-    const stretch = 1 + Math.sin(jt * Math.PI) * 0.38;
-    body.scale.set(1 / Math.sqrt(stretch), stretch, 1 / Math.sqrt(stretch));
+    body.scale.set(1, 1, 1);
     body.rotation.z = 0; body.rotation.x = 0;
+
   } else if (state === 'attack') {
     const at = Math.min(attackT / ATTACK_DUR, 1);
-    body.rotation.x = at < 0.3
-      ? -(at / 0.3) * 0.75
-      : -0.75 + ((at - 0.3) / 0.7) * 0.75;
-    body.scale.set(1, 1, 1);
-    body.rotation.z = 0;
+    // 뒤로 당기다 → 앞으로 밀치다 → 복구 (카메하메하 자세)
+    if (at < 0.2) {
+      body.rotation.x = -(at / 0.2) * 0.4;       // 뒤로 젖힘
+    } else if (at < 0.42) {
+      const t = (at - 0.2) / 0.22;
+      body.rotation.x = -0.4 + t * 0.7;           // 앞으로 밀치기
+    } else {
+      const t = (at - 0.42) / 0.58;
+      body.rotation.x = 0.3 - t * 0.3;            // 복구
+    }
+    body.scale.set(1, 1, 1); body.rotation.z = 0;
     group.position.y = THREE.MathUtils.lerp(group.position.y, 0, 0.2);
+
   } else if (state === 'walk') {
     const wt = performance.now() * 0.007;
     body.rotation.z = Math.sin(wt) * 0.09;
     body.rotation.x = THREE.MathUtils.lerp(body.rotation.x, 0, 0.2);
     body.scale.set(1, 1, 1);
     group.position.y = Math.abs(Math.sin(wt * 2)) * 0.09;
+
   } else { // idle
     body.rotation.z *= 0.85;
     body.rotation.x *= 0.85;
@@ -188,14 +175,68 @@ export function init(renderer) {
   let myBubble = null;
   const keys = {};
 
-  // FSM
-  let charState  = 'idle'; // idle | walk | jump | attack
-  let jumpTimer  = 0;
+  let charState   = 'idle';
+  let jumpTimer   = 0;
   let attackTimer = 0;
+
+  // ─── 장풍 ────────────────────────────────────────────────
+  const projectiles = []; // { group, ring1, ring2, glowMat, dir, dist, age }
+
+  function createProjectile(x, z, ry, colorHex) {
+    const col   = new THREE.Color(colorHex);
+    const white = new THREE.Color(0xffffff);
+    const grp   = new THREE.Group();
+
+    // 중심 흰 코어
+    grp.add(new THREE.Mesh(
+      new THREE.SphereGeometry(0.12, 10, 10),
+      new THREE.MeshBasicMaterial({ color: white })
+    ));
+    // 컬러 코어
+    grp.add(new THREE.Mesh(
+      new THREE.SphereGeometry(0.21, 12, 12),
+      new THREE.MeshBasicMaterial({ color: col })
+    ));
+    // 외부 글로우 (투명)
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: col, transparent: true, opacity: 0.35, depthWrite: false,
+    });
+    grp.add(new THREE.Mesh(new THREE.SphereGeometry(0.38, 12, 12), glowMat));
+
+    // 회전 링 ×2
+    const ringGeo = new THREE.TorusGeometry(0.32, 0.045, 6, 20);
+    const ringMat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.8 });
+    const ring1 = new THREE.Mesh(ringGeo, ringMat);
+    const ring2 = new THREE.Mesh(ringGeo, ringMat.clone());
+    ring2.rotation.y = Math.PI / 2;
+    grp.add(ring1); grp.add(ring2);
+
+    // 발사 위치: 캐릭터 앞 0.5 유닛, 허리 높이
+    grp.position.set(
+      x + Math.sin(ry) * 0.5,
+      1.0,
+      z + Math.cos(ry) * 0.5
+    );
+    scene.add(grp);
+
+    return {
+      group: grp, ring1, ring2, glowMat,
+      dir: new THREE.Vector3(Math.sin(ry), 0, Math.cos(ry)),
+      dist: 0, age: 0,
+    };
+  }
+
+  function disposeProjectile(p) {
+    scene.remove(p.group);
+    p.group.traverse(o => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) o.material.dispose();
+    });
+  }
 
   // ─── 방 / 네트워크 상태 ───────────────────────────────────
   let lobbyRoom = null, gameRoom = null;
-  let _sendRoomInfo = null, _sendMove = null, _sendChat = null;
+  let _sendRoomInfo = null, _sendMove = null, _sendChat = null, _sendFire = null;
   let announceInterval = null;
   let currentRoomId = null, currentRoomTitle = '';
   let hostId = null;
@@ -292,7 +333,7 @@ export function init(renderer) {
       <div id="hud-room-title" style="color:#e2e8f0;font-weight:bold;margin-bottom:2px;"></div>
       <span style="color:#e2e8f0">WASD</span> — 이동 &nbsp;
       <span style="color:#e2e8f0">Space</span> — 점프<br>
-      <span style="color:#e2e8f0">F</span> — 공격 &nbsp;&nbsp;&nbsp;
+      <span style="color:#e2e8f0">F</span> — 장풍 발사 &nbsp;
       <span style="color:#e2e8f0">Enter</span> — 채팅<br>
       접속 중: <span id="hud-count" style="color:#34d399;">1</span>명
     </div>
@@ -326,6 +367,7 @@ export function init(renderer) {
   `;
   document.body.appendChild(hud);
 
+  let chatOpen = false;
   const chatInput = document.createElement('input');
   chatInput.type = 'text'; chatInput.maxLength = 40;
   chatInput.placeholder = 'Enter 전송  /  Esc 취소';
@@ -336,6 +378,16 @@ export function init(renderer) {
     padding:10px 16px;color:#f1f5f9;font-family:"Courier New",monospace;font-size:14px;
     outline:none;z-index:1000;
   `;
+  chatInput.addEventListener('keydown', e => {
+    e.stopImmediatePropagation();
+    if (e.code === 'Enter' && !e.isComposing) {
+      sendChat(chatInput.value.trim());
+      chatInput.style.display = 'none'; chatInput.blur(); chatOpen = false;
+    }
+    if (e.code === 'Escape') {
+      chatInput.style.display = 'none'; chatInput.blur(); chatOpen = false;
+    }
+  });
   document.body.appendChild(chatInput);
 
   // ══════════════════════════════════════════════════════════
@@ -455,10 +507,12 @@ export function init(renderer) {
     const announceAction = gameRoom.makeAction('announce');
     const moveAction     = gameRoom.makeAction('move');
     const chatAction     = gameRoom.makeAction('chat');
+    const fireAction     = gameRoom.makeAction('fire');     // 장풍 발사 이벤트
     const hostTakeAction = gameRoom.makeAction('hostTake');
 
     _sendMove = (data) => moveAction.send(data);
     _sendChat = (data) => chatAction.send(data);
+    _sendFire = (data) => fireAction.send(data);
 
     gameRoom.onPeerJoin = peerId => {
       announceAction.send(
@@ -480,13 +534,17 @@ export function init(renderer) {
       const p = remotePlayers.get(peerId);
       if (!p) return;
       p.targetX = data.x; p.targetZ = data.z; p.targetRy = data.ry;
-      // 상태 변화 감지
       if (data.state !== p.state) {
-        if (data.state === 'attack') triggerAttackEffect(p.group);
         if (data.state === 'jump' && p.state !== 'jump') p.jumpTimer = 0;
         if (data.state !== 'attack') p.attackTimer = 0;
         p.state = data.state;
       }
+      rxCount++;
+    };
+
+    // 장풍 발사: 이벤트 수신 즉시 그 위치/방향으로 장풍 생성
+    fireAction.onMessage = (data) => {
+      projectiles.push(createProjectile(data.x, data.z, data.ry, data.color));
       rxCount++;
     };
 
@@ -523,10 +581,12 @@ export function init(renderer) {
   function leaveGame() {
     stopAnnouncing();
     if (gameRoom) { gameRoom.leave(); gameRoom = null; }
-    _sendMove = null; _sendChat = null;
+    _sendMove = null; _sendChat = null; _sendFire = null;
     removeAllRemotes();
+    for (const p of projectiles) disposeProjectile(p);
+    projectiles.length = 0;
     myX = 0; myZ = 0; myRy = 0; charState = 'idle';
-    if (myGroup) { myGroup.position.set(0, 0, 0); }
+    if (myGroup) myGroup.position.set(0, 0, 0);
     controls.enabled = false;
     hud.style.display = 'none';
     chatInput.style.display = 'none';
@@ -546,8 +606,7 @@ export function init(renderer) {
     remotePlayers.set(peerId, {
       group, tex, nick, colorHex,
       targetX: x ?? 0, targetZ: z ?? 0, targetRy: 0,
-      state, jumpTimer: 0, attackTimer: 0,
-      bubble: null,
+      state, jumpTimer: 0, attackTimer: 0, bubble: null,
     });
     updateHudCount();
     addChatLog(null, null, `🟢 ${nick} 입장`);
@@ -568,10 +627,7 @@ export function init(renderer) {
     addChatLog(null, null, `🔴 ${p.nick} 퇴장`);
   }
 
-  function removeAllRemotes() {
-    for (const [id] of remotePlayers) removeRemote(id);
-  }
-
+  function removeAllRemotes() { for (const [id] of remotePlayers) removeRemote(id); }
   function updateHudCount() {
     const el = hud.querySelector('#hud-count');
     if (el) el.textContent = 1 + remotePlayers.size;
@@ -616,19 +672,6 @@ export function init(renderer) {
   // ══════════════════════════════════════════════════════════
   //  키 입력
   // ══════════════════════════════════════════════════════════
-  let chatOpen = false;
-
-  chatInput.addEventListener('keydown', e => {
-    e.stopImmediatePropagation();
-    if (e.code === 'Enter') {
-      sendChat(chatInput.value.trim());
-      chatInput.style.display = 'none'; chatInput.blur(); chatOpen = false;
-    }
-    if (e.code === 'Escape') {
-      chatInput.style.display = 'none'; chatInput.blur(); chatOpen = false;
-    }
-  });
-
   const onKeyDown = e => {
     if (hud.style.display === 'none') return;
     if (chatOpen) return;
@@ -646,7 +689,9 @@ export function init(renderer) {
     if (e.code === 'KeyF') {
       if (charState !== 'jump' && charState !== 'attack') {
         charState = 'attack'; attackTimer = 0;
-        triggerAttackEffect(myGroup);
+        // 장풍 발사 (즉시)
+        projectiles.push(createProjectile(myX, myZ, myRy, MY_COLOR));
+        if (_sendFire) { _sendFire({ x: myX, z: myZ, ry: myRy, color: MY_COLOR }); txCount++; }
       }
       return;
     }
@@ -752,20 +797,14 @@ export function init(renderer) {
       }
       myX = Math.max(-19, Math.min(19, myX));
       myZ = Math.max(-19, Math.min(19, myZ));
-
-      if (myGroup) {
-        myGroup.position.x = myX;
-        myGroup.position.z = myZ;
-        myGroup.rotation.y = myRy + Math.PI;
-      }
+      if (myGroup) { myGroup.position.x = myX; myGroup.position.z = myZ; myGroup.rotation.y = myRy + Math.PI; }
       controls.target.lerp(_tgt.set(myX, 1, myZ), 0.05);
 
-      // ─── FSM 업데이트 ────────────────────────────────────
+      // ─── FSM ─────────────────────────────────────────────
       if (charState === 'jump') {
         jumpTimer += delta;
         if (jumpTimer >= JUMP_DUR) {
-          jumpTimer = 0;
-          charState = moving ? 'walk' : 'idle';
+          jumpTimer = 0; charState = moving ? 'walk' : 'idle';
           if (myGroup) myGroup.position.y = 0;
         }
       } else if (charState === 'attack') {
@@ -779,7 +818,6 @@ export function init(renderer) {
         charState = moving ? 'walk' : 'idle';
       }
 
-      // ─── 내 캐릭터 애니메이션 적용 ──────────────────────
       if (myGroup) applyAnim(myGroup, charState, jumpTimer, attackTimer);
       if (elState) elState.textContent = charState;
 
@@ -793,7 +831,6 @@ export function init(renderer) {
 
       // ─── 원격 플레이어 보간 + 애니메이션 ────────────────
       for (const [, p] of remotePlayers) {
-        // 위치 보간
         p.group.position.x = THREE.MathUtils.lerp(p.group.position.x, p.targetX, 0.15);
         p.group.position.z = THREE.MathUtils.lerp(p.group.position.z, p.targetZ, 0.15);
         let rd = p.targetRy - p.group.rotation.y;
@@ -801,20 +838,12 @@ export function init(renderer) {
         if (rd < -Math.PI) rd += Math.PI * 2;
         p.group.rotation.y += rd * 0.15;
 
-        // 상태 타이머 진행
-        if (p.state === 'jump') {
-          p.jumpTimer = Math.min((p.jumpTimer || 0) + delta, JUMP_DUR);
-        } else {
-          p.jumpTimer = 0;
-        }
-        if (p.state === 'attack') {
-          p.attackTimer = Math.min((p.attackTimer || 0) + delta, ATTACK_DUR);
-        } else {
-          p.attackTimer = 0;
-        }
+        if (p.state === 'jump')   p.jumpTimer   = Math.min((p.jumpTimer   || 0) + delta, JUMP_DUR);
+        else                       p.jumpTimer   = 0;
+        if (p.state === 'attack') p.attackTimer = Math.min((p.attackTimer || 0) + delta, ATTACK_DUR);
+        else                       p.attackTimer = 0;
         applyAnim(p.group, p.state, p.jumpTimer, p.attackTimer);
 
-        // 말풍선
         if (p.bubble) {
           p.bubble.timer -= delta;
           if (p.bubble.timer <= 0) {
@@ -833,16 +862,30 @@ export function init(renderer) {
         } else if (myBubble.timer < 1) myBubble.mat.opacity = myBubble.timer;
       }
 
-      // ─── 공격 이펙트 업데이트 ────────────────────────────
-      for (let i = attackEffects.length - 1; i >= 0; i--) {
-        const e = attackEffects[i];
-        e.t += delta;
-        e.ring.scale.setScalar(1 + e.t * 5);
-        e.ring.material.opacity = Math.max(0, 1 - e.t / 0.35);
-        if (e.t >= 0.35) {
-          e.group.remove(e.ring);
-          e.ring.geometry.dispose(); e.ring.material.dispose();
-          attackEffects.splice(i, 1);
+      // ─── 장풍 업데이트 ───────────────────────────────────
+      for (let i = projectiles.length - 1; i >= 0; i--) {
+        const p = projectiles[i];
+        p.age   += delta;
+        p.dist  += PROJ_SPEED * delta;
+        p.group.position.x += p.dir.x * PROJ_SPEED * delta;
+        p.group.position.z += p.dir.z * PROJ_SPEED * delta;
+
+        // 링 회전
+        p.ring1.rotation.z += delta * 11;
+        p.ring2.rotation.x += delta * 7;
+
+        // 글로우 펄스
+        p.glowMat.opacity = 0.28 + Math.sin(p.age * 22) * 0.12;
+
+        // 거리 끝 부분에서 축소 페이드
+        if (p.dist > PROJ_MAXDIST * 0.72) {
+          const fade = 1 - (p.dist - PROJ_MAXDIST * 0.72) / (PROJ_MAXDIST * 0.28);
+          p.group.scale.setScalar(Math.max(0, fade));
+        }
+
+        if (p.dist >= PROJ_MAXDIST) {
+          disposeProjectile(p);
+          projectiles.splice(i, 1);
         }
       }
 
@@ -892,10 +935,8 @@ export function init(renderer) {
     if (myTagTex)  myTagTex.dispose();
     if (_floorTex) _floorTex.dispose();
     if (myBubble) { myBubble.tex.dispose(); myBubble.mat.dispose(); }
-    for (const e of attackEffects) {
-      e.group.remove(e.ring); e.ring.geometry.dispose(); e.ring.material.dispose();
-    }
-    attackEffects.length = 0;
+    for (const p of projectiles) disposeProjectile(p);
+    projectiles.length = 0;
     removeAllRemotes();
     scene.traverse(obj => {
       if (obj.geometry) obj.geometry.dispose();

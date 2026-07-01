@@ -293,6 +293,13 @@ export const LESSONS = [
     fileKey: '41-multiplayer',
     file: () => import('../lessons/41-multiplayer.js'),
   },
+  {
+    id: '42',
+    title: '진짜 P2P 멀티플레이어',
+    desc: 'Trystero(BitTorrent DHT), 로비/방 만들기, 닉네임, 방장 승계, 채팅',
+    fileKey: '42-p2p-multiplayer',
+    file: () => import('../lessons/42-p2p-multiplayer.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

@@ -12,9 +12,11 @@
     "vite": "^8.1.0"
   },
   "dependencies": {
+    "@trystero-p2p/torrent": "^0.25.2",
     "cannon-es": "^0.20.0",
     "highlight.js": "^11.11.1",
     "three": "^0.185.0",
-    "three-bvh-csg": "^0.0.18"
+    "three-bvh-csg": "^0.0.18",
+    "trystero": "^0.25.2"
   }
 }

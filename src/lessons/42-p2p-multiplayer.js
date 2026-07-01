@@ -1,22 +1,22 @@
 // ══════════════════════════════════════════════════════════════
-//  레슨 42: 진짜 P2P 멀티플레이어 (Trystero)
+//  레슨 42: 진짜 P2P 멀티플레이어 (Trystero) + 캐릭터 액션
 //
 //  📌 다른 브라우저, 다른 컴퓨터에서 들어와도 연결됩니다!
-//     (같은 방 이름을 고르면 됩니다)
 //
 //  배울 것:
 //    - Trystero       : BitTorrent DHT 기반 진짜 노서버 P2P
 //    - selfId         : 각 피어의 고유 ID (Trystero 자동 발급)
-//    - makeAction     : 타입별 send/receive 쌍 생성
+//    - makeAction     : action 객체 → .send() / .onMessage = fn
 //    - 로비 패턴      : 숨겨진 공용 룸으로 방 목록 공유
 //    - 방장 승계      : 남은 피어 중 selfId 정렬 최솟값이 자동 방장
-//    - P2P vs 서버    : 완전 노서버, 서버리스 배포(GitHub Pages)와 완벽 호환
+//    - 상태 머신 동기화: 내 FSM 상태를 move 패킷에 실어 전송
+//                       → 원격 플레이어도 동일한 애니 재생
 //
-//  레슨 41(BroadcastChannel)과 비교:
-//    - 채널 생성  : new BroadcastChannel(name)  → joinRoom({appId}, name)
-//    - 메시지 전송: channel.postMessage(data)    → sendXxx(data)
-//    - 메시지 수신: channel.onmessage            → onXxx((data, peerId) => {})
-//    - 입장/퇴장  : 수동 join/leave 메시지      → onPeerJoin / onPeerLeave 이벤트
+//  조작:
+//    WASD   — 이동
+//    Space  — 점프
+//    F      — 공격
+//    Enter  — 채팅
 // ══════════════════════════════════════════════════════════════
 
 import * as THREE from 'three';
@@ -29,18 +29,20 @@ const APP_ID       = 'threejs-lab-42-v1';
 const LOBBY_ROOM   = '__lobby__';
 const SYNC_MS      = 50;
 const ANNOUNCE_MS  = 2000;
-const ROOM_TIMEOUT = 6000; // 이 시간 동안 공지 없으면 방 목록에서 제거
+const ROOM_TIMEOUT = 6000;
 const BUBBLE_SEC   = 4.0;
-const MY_COLOR     = (() => {
+const JUMP_H       = 2.2;   // 점프 높이
+const JUMP_DUR     = 0.55;  // 점프 지속 시간 (초)
+const ATTACK_DUR   = 0.5;   // 공격 지속 시간 (초)
+
+const MY_COLOR = (() => {
   let h = 0;
   for (const c of selfId) h = (h * 31 + c.charCodeAt(0)) & 0xffffff;
   return new THREE.Color().setHSL((Math.abs(h) % 360) / 360, 0.85, 0.6).getHex();
 })();
 
 // ─── 유틸 ─────────────────────────────────────────────────────
-function hexColorStr(hex) {
-  return '#' + hex.toString(16).padStart(6, '0');
-}
+function hexStr(hex) { return '#' + hex.toString(16).padStart(6, '0'); }
 function colorFromId(id) {
   let h = 0;
   for (const c of id) h = (h * 31 + c.charCodeAt(0)) & 0xffffff;
@@ -55,7 +57,7 @@ function makeNameTag(label, colorHex) {
   ctx.fillStyle = 'rgba(0,0,0,0.75)';
   ctx.beginPath(); ctx.roundRect(4, 4, 312, 72, 14); ctx.fill();
   ctx.font = 'bold 32px "Courier New",monospace';
-  ctx.fillStyle = hexColorStr(colorHex);
+  ctx.fillStyle = hexStr(colorHex);
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(label.slice(0, 14), 160, 40);
   const tex = new THREE.CanvasTexture(cvs);
@@ -73,8 +75,7 @@ function makeBubble(text, colorHex) {
   const ctx = cvs.getContext('2d');
   ctx.fillStyle = 'rgba(10,10,20,0.92)';
   ctx.beginPath(); ctx.roundRect(6, 6, 500, 116, 18); ctx.fill();
-  ctx.strokeStyle = hexColorStr(colorHex);
-  ctx.lineWidth = 4;
+  ctx.strokeStyle = hexStr(colorHex); ctx.lineWidth = 4;
   ctx.beginPath(); ctx.roundRect(6, 6, 500, 116, 18); ctx.stroke();
   ctx.font = 'bold 40px "Courier New",monospace';
   ctx.fillStyle = '#f1f5f9';
@@ -91,30 +92,82 @@ function makeBubble(text, colorHex) {
 function makePlayerMesh(colorHex, scene) {
   const color = new THREE.Color(colorHex);
   const group = new THREE.Group();
+
   const body = new THREE.Mesh(
     new THREE.CapsuleGeometry(0.38, 0.8, 4, 8),
     new THREE.MeshStandardMaterial({ color, roughness: 0.4 })
   );
-  body.position.y = 0.78; body.castShadow = true; group.add(body);
+  body.position.y = 0.78; body.castShadow = true; group.add(body); // children[0]
+
   const head = new THREE.Mesh(
     new THREE.SphereGeometry(0.28, 16, 16),
     new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.2, roughness: 0.3 })
   );
-  head.position.y = 1.72; head.castShadow = true; group.add(head);
+  head.position.y = 1.72; head.castShadow = true; group.add(head); // children[1]
+
   const eyeMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
   const eyeGeo = new THREE.SphereGeometry(0.06, 6, 6);
   [-0.12, 0.12].forEach(x => {
     const eye = new THREE.Mesh(eyeGeo, eyeMat);
-    eye.position.set(x, 1.74, -0.25); group.add(eye);
+    eye.position.set(x, 1.74, -0.25); group.add(eye); // children[2,3]
   });
+
   scene.add(group);
   return group;
+}
+
+// ─── 공격 이펙트 (충격파 링) ──────────────────────────────────
+const attackEffects = []; // { ring, group, t }
+
+function triggerAttackEffect(group) {
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(0.5, 0.07, 6, 20),
+    new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 1 })
+  );
+  ring.position.set(0, 0.85, -0.6);
+  ring.rotation.x = Math.PI / 2;
+  group.add(ring);
+  attackEffects.push({ ring, group, t: 0 });
+}
+
+// ─── 공통 애니메이션 적용 ─────────────────────────────────────
+function applyAnim(group, state, jumpT, attackT) {
+  const body = group.children[0];
+  if (!body) return;
+
+  if (state === 'jump') {
+    const jt = Math.min(jumpT / JUMP_DUR, 1);
+    group.position.y = Math.sin(jt * Math.PI) * JUMP_H;
+    const stretch = 1 + Math.sin(jt * Math.PI) * 0.38;
+    body.scale.set(1 / Math.sqrt(stretch), stretch, 1 / Math.sqrt(stretch));
+    body.rotation.z = 0; body.rotation.x = 0;
+  } else if (state === 'attack') {
+    const at = Math.min(attackT / ATTACK_DUR, 1);
+    body.rotation.x = at < 0.3
+      ? -(at / 0.3) * 0.75
+      : -0.75 + ((at - 0.3) / 0.7) * 0.75;
+    body.scale.set(1, 1, 1);
+    body.rotation.z = 0;
+    group.position.y = THREE.MathUtils.lerp(group.position.y, 0, 0.2);
+  } else if (state === 'walk') {
+    const wt = performance.now() * 0.007;
+    body.rotation.z = Math.sin(wt) * 0.09;
+    body.rotation.x = THREE.MathUtils.lerp(body.rotation.x, 0, 0.2);
+    body.scale.set(1, 1, 1);
+    group.position.y = Math.abs(Math.sin(wt * 2)) * 0.09;
+  } else { // idle
+    body.rotation.z *= 0.85;
+    body.rotation.x *= 0.85;
+    body.scale.x = THREE.MathUtils.lerp(body.scale.x, 1, 0.15);
+    body.scale.y = THREE.MathUtils.lerp(body.scale.y, 1, 0.15);
+    body.scale.z = THREE.MathUtils.lerp(body.scale.z, 1, 0.15);
+    group.position.y = THREE.MathUtils.lerp(group.position.y, 0, 0.2);
+  }
 }
 
 // ──────────────────────────────────────────────────────────────
 export function init(renderer) {
 
-  // ─── Three.js 씬 (항상 렌더링, 게임룸 전엔 빈 배경) ──────
   const scene  = new THREE.Scene();
   scene.background = new THREE.Color(0x0a0f1e);
   const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 200);
@@ -123,33 +176,35 @@ export function init(renderer) {
   controls.enableDamping = true; controls.dampingFactor = 0.1;
   controls.maxPolarAngle = Math.PI / 2 - 0.05;
   controls.minDistance = 4; controls.maxDistance = 40;
-  controls.enabled = false; // 로비에선 비활성
+  controls.enabled = false;
 
   const timer = new Timer();
   let animId;
 
-  // ─── 게임 상태 ────────────────────────────────────────────
-  let myNick  = '';
+  // ─── 내 캐릭터 상태 ───────────────────────────────────────
+  let myNick = '';
   let myX = 0, myZ = 0, myRy = 0;
   let myGroup = null, myTagTex = null;
   let myBubble = null;
   const keys = {};
 
-  // ─── 방 / 네트워크 상태 ──────────────────────────────────
-  let lobbyRoom        = null;
-  let gameRoom         = null;
-  let _sendRoomInfo    = null; // 로비에 방 정보 공지용
-  let _sendMove        = null;
-  let _sendChat        = null;
-  let announceInterval = null;
-  let currentRoomId    = null;
-  let currentRoomTitle = '';
-  let hostId           = null; // 현재 방의 방장 selfId
-  let sceneReady       = false;
-  let txCount = 0, rxCount = 0;
+  // FSM
+  let charState  = 'idle'; // idle | walk | jump | attack
+  let jumpTimer  = 0;
+  let attackTimer = 0;
 
-  const remotePlayers = new Map(); // peerId → { group, nick, colorHex, ... }
-  const roomList      = new Map(); // roomId → { title, creatorNick, count, hostId, lastSeen }
+  // ─── 방 / 네트워크 상태 ───────────────────────────────────
+  let lobbyRoom = null, gameRoom = null;
+  let _sendRoomInfo = null, _sendMove = null, _sendChat = null;
+  let announceInterval = null;
+  let currentRoomId = null, currentRoomTitle = '';
+  let hostId = null;
+  let sceneReady = false;
+  let txCount = 0, rxCount = 0;
+  let _lobbyPruneId = null;
+
+  const remotePlayers = new Map();
+  const roomList = new Map();
 
   // ══════════════════════════════════════════════════════════
   //  DOM: 닉네임 화면
@@ -167,8 +222,7 @@ export function init(renderer) {
     <div style="color:#94a3b8;font-size:13px;">닉네임을 설정해주세요</div>
     <input id="nick-input" maxlength="12" placeholder="닉네임 (최대 12자)"
       style="padding:12px 20px;background:#1e293b;border:2px solid #334155;border-radius:10px;
-             color:#f1f5f9;font-size:16px;outline:none;width:260px;text-align:center;
-             font-family:inherit;transition:border-color .2s;" />
+             color:#f1f5f9;font-size:16px;outline:none;width:260px;text-align:center;font-family:inherit;" />
     <button id="nick-btn"
       style="padding:12px 36px;background:#6366f1;border:none;border-radius:10px;
              color:#fff;font-size:15px;cursor:pointer;font-family:inherit;font-weight:bold;">
@@ -195,7 +249,6 @@ export function init(renderer) {
       <div style="color:#475569;font-size:11px;">Trystero P2P · 노서버</div>
     </div>
     <div style="display:flex;gap:20px;flex:1;min-height:0;">
-      <!-- 방 목록 -->
       <div style="flex:1;background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:20px;
                   display:flex;flex-direction:column;overflow:hidden;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
@@ -207,7 +260,6 @@ export function init(renderer) {
           아직 방이 없어요<br><br>방을 만들어 친구를 초대하세요!
         </div>
       </div>
-      <!-- 방 만들기 -->
       <div style="width:240px;background:#0f172a;border:1px solid #1e293b;border-radius:12px;
                   padding:20px;display:flex;flex-direction:column;gap:12px;">
         <div style="color:#94a3b8;font-size:12px;font-weight:bold;">방 만들기</div>
@@ -221,7 +273,6 @@ export function init(renderer) {
         </button>
         <div style="height:1px;background:#1e293b;"></div>
         <div style="color:#334155;font-size:11px;line-height:1.7;">
-          만든 방은 로비에<br>2초마다 공지됩니다.<br><br>
           방장이 퇴장하면<br>자동으로 승계됩니다.
         </div>
       </div>
@@ -235,36 +286,34 @@ export function init(renderer) {
   const hud = document.createElement('div');
   hud.style.cssText = 'position:fixed;inset:0;pointer-events:none;font-family:"Courier New",monospace;display:none;';
   hud.innerHTML = `
-    <!-- 방 정보 + 조작 안내 -->
     <div style="position:absolute;left:var(--panel-left,280px);top:16px;transition:left .25s ease;
       background:rgba(0,0,0,.75);border:1px solid #334155;border-radius:8px;
-      padding:12px 16px;color:#94a3b8;font-size:12px;line-height:1.9;">
-      <div id="hud-room-title" style="color:#e2e8f0;font-weight:bold;margin-bottom:4px;"></div>
-      <span style="color:#e2e8f0">WASD</span> — 이동<br>
+      padding:12px 16px;color:#94a3b8;font-size:12px;line-height:2;">
+      <div id="hud-room-title" style="color:#e2e8f0;font-weight:bold;margin-bottom:2px;"></div>
+      <span style="color:#e2e8f0">WASD</span> — 이동 &nbsp;
+      <span style="color:#e2e8f0">Space</span> — 점프<br>
+      <span style="color:#e2e8f0">F</span> — 공격 &nbsp;&nbsp;&nbsp;
       <span style="color:#e2e8f0">Enter</span> — 채팅<br>
       접속 중: <span id="hud-count" style="color:#34d399;">1</span>명
     </div>
-    <!-- 내 정보 + 로비 버튼 -->
     <div style="position:absolute;left:var(--panel-left,280px);bottom:20px;transition:left .25s ease;
       background:rgba(0,0,0,.75);border:1px solid #334155;border-radius:8px;
       padding:12px 16px;color:#94a3b8;font-size:13px;line-height:1.9;pointer-events:auto;">
       <span id="hud-my-nick" style="font-weight:bold;"></span><br>
+      상태: <span id="hud-state" style="color:#fbbf24;">idle</span><br>
       <button id="leave-btn"
-        style="margin-top:6px;padding:4px 10px;background:#1e293b;border:1px solid #334155;
+        style="margin-top:4px;padding:4px 10px;background:#1e293b;border:1px solid #334155;
                border-radius:6px;color:#94a3b8;font-size:11px;cursor:pointer;font-family:inherit;">
         ← 로비로
       </button>
     </div>
-    <!-- 네트워크 통계 -->
     <div style="position:absolute;right:20px;top:16px;
       background:rgba(0,0,0,.75);border:1px solid #334155;border-radius:8px;
       padding:12px 16px;color:#94a3b8;font-size:13px;line-height:1.9;">
       <div style="color:#e2e8f0;font-weight:bold;margin-bottom:4px;">P2P 네트워크</div>
       TX <span id="hud-tx" style="color:#6366f1;">0</span> msg/s<br>
-      RX <span id="hud-rx" style="color:#10b981;">0</span> msg/s<br>
-      <span style="color:#334155;font-size:11px;">주기 ${SYNC_MS}ms</span>
+      RX <span id="hud-rx" style="color:#10b981;">0</span> msg/s
     </div>
-    <!-- 채팅 로그 -->
     <div style="position:absolute;left:50%;transform:translateX(-50%);bottom:20px;
       background:rgba(0,0,0,.78);border:1px solid #334155;border-radius:8px;
       padding:10px 14px;width:320px;">
@@ -321,33 +370,24 @@ export function init(renderer) {
       roomList.set(data.roomId, { ...data, lastSeen: Date.now() });
       renderRoomList();
     };
-
-    // 오래된 방 정기 정리
-    const pruneId = setInterval(() => {
-      const now = Date.now();
-      let changed = false;
+    _lobbyPruneId = setInterval(() => {
+      const now = Date.now(); let changed = false;
       for (const [id, r] of roomList) {
         if (now - r.lastSeen > ROOM_TIMEOUT) { roomList.delete(id); changed = true; }
       }
       if (changed) renderRoomList();
     }, 3000);
-
-    // cleanup에서 정리할 수 있도록 저장
-    _lobbyPruneId = pruneId;
   }
-
-  let _lobbyPruneId = null;
 
   // ══════════════════════════════════════════════════════════
   //  방 목록 렌더링
   // ══════════════════════════════════════════════════════════
   function renderRoomList() {
-    const listEl   = lobbyScreen.querySelector('#room-list-el');
-    const noRooms  = lobbyScreen.querySelector('#no-rooms-el');
+    const listEl  = lobbyScreen.querySelector('#room-list-el');
+    const noRooms = lobbyScreen.querySelector('#no-rooms-el');
     listEl.innerHTML = '';
     if (roomList.size === 0) { noRooms.style.display = 'block'; return; }
     noRooms.style.display = 'none';
-
     for (const [roomId, r] of roomList) {
       const row = document.createElement('div');
       row.style.cssText = `display:flex;align-items:center;gap:12px;
@@ -360,14 +400,11 @@ export function init(renderer) {
             개설자: ${r.creatorNick} · ${r.count}명
           </div>
         </div>
-        <button data-rid="${roomId}"
-          style="padding:6px 14px;background:#0ea5e9;border:none;border-radius:6px;
-                 color:#fff;font-size:12px;cursor:pointer;font-family:inherit;flex-shrink:0;">
-          입장
-        </button>
+        <button style="padding:6px 14px;background:#0ea5e9;border:none;border-radius:6px;
+          color:#fff;font-size:12px;cursor:pointer;font-family:inherit;flex-shrink:0;">입장</button>
       `;
       row.querySelector('button').addEventListener('click', () => {
-        enterGameRoom(roomId, r.title, r.hostId, false);
+        enterGameRoom(roomId, r.title, r.hostId);
       });
       listEl.appendChild(row);
     }
@@ -377,32 +414,26 @@ export function init(renderer) {
   //  방 만들기
   // ══════════════════════════════════════════════════════════
   lobbyScreen.querySelector('#create-room-btn').addEventListener('click', () => {
-    const title = lobbyScreen.querySelector('#room-title-input').value.trim()
-                  || `${myNick}의 방`;
+    const title  = lobbyScreen.querySelector('#room-title-input').value.trim() || `${myNick}의 방`;
     const roomId = Math.random().toString(36).slice(2, 8).toUpperCase();
-    currentRoomId    = roomId;
-    currentRoomTitle = title;
-    hostId           = selfId;
+    currentRoomId = roomId; currentRoomTitle = title; hostId = selfId;
     startAnnouncing(title, myNick);
-    enterGameRoom(roomId, title, selfId, true);
+    enterGameRoom(roomId, title, selfId);
   });
 
   // ══════════════════════════════════════════════════════════
-  //  로비에 방 정보 공지 (호스트만)
+  //  로비에 방 정보 공지
   // ══════════════════════════════════════════════════════════
   function startAnnouncing(title, creatorNick) {
     stopAnnouncing();
     const broadcast = () => {
       if (!_sendRoomInfo) return;
-      _sendRoomInfo({
-        roomId: currentRoomId, title, creatorNick,
-        count: remotePlayers.size + 1, hostId: selfId,
-      });
+      _sendRoomInfo({ roomId: currentRoomId, title, creatorNick,
+                      count: remotePlayers.size + 1, hostId: selfId });
     };
     broadcast();
     announceInterval = setInterval(broadcast, ANNOUNCE_MS);
   }
-
   function stopAnnouncing() {
     if (announceInterval) { clearInterval(announceInterval); announceInterval = null; }
   }
@@ -410,54 +441,55 @@ export function init(renderer) {
   // ══════════════════════════════════════════════════════════
   //  게임룸 입장
   // ══════════════════════════════════════════════════════════
-  function enterGameRoom(roomId, title, _hostId, asHost) {
+  function enterGameRoom(roomId, title, _hostId) {
     lobbyScreen.style.display = 'none';
     hud.style.display = 'block';
     hud.querySelector('#hud-room-title').textContent = `🏠 ${title}`;
     hud.querySelector('#hud-my-nick').textContent    = myNick;
     controls.enabled = true;
-
-    currentRoomId    = roomId;
-    currentRoomTitle = title;
-    hostId           = _hostId;
-
+    currentRoomId = roomId; currentRoomTitle = title; hostId = _hostId;
     if (!sceneReady) initScene();
 
     gameRoom = joinRoom({ appId: APP_ID }, roomId);
 
-    const announceAction  = gameRoom.makeAction('announce');
-    const moveAction      = gameRoom.makeAction('move');
-    const chatAction      = gameRoom.makeAction('chat');
-    const hostTakeAction  = gameRoom.makeAction('hostTake'); // 방장 승계 알림
+    const announceAction = gameRoom.makeAction('announce');
+    const moveAction     = gameRoom.makeAction('move');
+    const chatAction     = gameRoom.makeAction('chat');
+    const hostTakeAction = gameRoom.makeAction('hostTake');
 
     _sendMove = (data) => moveAction.send(data);
     _sendChat = (data) => chatAction.send(data);
 
-    // 새 피어 접속 → 내 현재 상태 전송
     gameRoom.onPeerJoin = peerId => {
-      announceAction.send({ nick: myNick, color: MY_COLOR, x: myX, z: myZ }, { target: peerId });
+      announceAction.send(
+        { nick: myNick, color: MY_COLOR, x: myX, z: myZ, state: charState },
+        { target: peerId }
+      );
     };
 
-    // 피어 퇴장
     gameRoom.onPeerLeave = peerId => {
       removeRemote(peerId);
       if (peerId === hostId) checkHostSuccession(hostTakeAction);
     };
 
-    // 입장 시 내 정보 수신 (다른 플레이어가 보내준 것)
     announceAction.onMessage = (data, peerId) => {
-      addRemote(peerId, data.nick, data.color, data.x, data.z);
+      addRemote(peerId, data.nick, data.color, data.x, data.z, data.state);
     };
 
-    // 이동 수신
     moveAction.onMessage = (data, peerId) => {
       const p = remotePlayers.get(peerId);
       if (!p) return;
       p.targetX = data.x; p.targetZ = data.z; p.targetRy = data.ry;
+      // 상태 변화 감지
+      if (data.state !== p.state) {
+        if (data.state === 'attack') triggerAttackEffect(p.group);
+        if (data.state === 'jump' && p.state !== 'jump') p.jumpTimer = 0;
+        if (data.state !== 'attack') p.attackTimer = 0;
+        p.state = data.state;
+      }
       rxCount++;
     };
 
-    // 채팅 수신
     chatAction.onMessage = (data, peerId) => {
       const p = remotePlayers.get(peerId);
       if (p) p.bubble = showBubble(p.group, p.bubble, data.text, p.colorHex);
@@ -465,7 +497,6 @@ export function init(renderer) {
       rxCount++;
     };
 
-    // 방장 승계 알림 수신 (새 방장이 선언)
     hostTakeAction.onMessage = data => {
       hostId = data.hostId;
       addChatLog(null, null, `👑 ${data.nick} 님이 방장이 되었습니다`);
@@ -474,16 +505,13 @@ export function init(renderer) {
 
   // ══════════════════════════════════════════════════════════
   //  방장 승계
-  //  퇴장한 피어가 방장이면, 남은 피어(+ 나) 중 selfId 정렬 최솟값이 새 방장
-  //  → 모든 피어가 독립적으로 같은 결론에 도달 (결정적 알고리즘)
   // ══════════════════════════════════════════════════════════
   function checkHostSuccession(hostTakeAction) {
     const allIds = [...Object.keys(gameRoom.getPeers()), selfId].sort();
-    if (allIds[0] !== selfId) return; // 내가 최솟값이 아니면 아무것도 안 함
-    // 내가 새 방장
+    if (allIds[0] !== selfId) return;
     hostId = selfId;
     startAnnouncing(currentRoomTitle, myNick);
-    hostTakeAction.send({ hostId: selfId, nick: myNick }); // 다른 피어에게 알림
+    hostTakeAction.send({ hostId: selfId, nick: myNick });
     addChatLog(null, null, `👑 방장이 되었습니다`);
   }
 
@@ -497,20 +525,19 @@ export function init(renderer) {
     if (gameRoom) { gameRoom.leave(); gameRoom = null; }
     _sendMove = null; _sendChat = null;
     removeAllRemotes();
-    myX = 0; myZ = 0; myRy = 0;
-    if (myGroup) myGroup.position.set(0, 0, 0);
+    myX = 0; myZ = 0; myRy = 0; charState = 'idle';
+    if (myGroup) { myGroup.position.set(0, 0, 0); }
     controls.enabled = false;
     hud.style.display = 'none';
     chatInput.style.display = 'none';
-    roomList.clear();
-    renderRoomList();
+    roomList.clear(); renderRoomList();
     lobbyScreen.style.display = 'flex';
   }
 
   // ══════════════════════════════════════════════════════════
   //  원격 플레이어 관리
   // ══════════════════════════════════════════════════════════
-  function addRemote(peerId, nick, colorHex, x, z) {
+  function addRemote(peerId, nick, colorHex, x, z, state = 'idle') {
     if (peerId === selfId || remotePlayers.has(peerId)) return;
     const group = makePlayerMesh(colorHex, scene);
     group.position.set(x ?? 0, 0, z ?? 0);
@@ -519,6 +546,7 @@ export function init(renderer) {
     remotePlayers.set(peerId, {
       group, tex, nick, colorHex,
       targetX: x ?? 0, targetZ: z ?? 0, targetRy: 0,
+      state, jumpTimer: 0, attackTimer: 0,
       bubble: null,
     });
     updateHudCount();
@@ -553,13 +581,9 @@ export function init(renderer) {
   //  말풍선 / 채팅 로그
   // ══════════════════════════════════════════════════════════
   function showBubble(group, existing, text, colorHex) {
-    if (existing) {
-      group.remove(existing.sprite);
-      existing.tex.dispose(); existing.mat.dispose();
-    }
+    if (existing) { group.remove(existing.sprite); existing.tex.dispose(); existing.mat.dispose(); }
     const b = makeBubble(text, colorHex);
-    b.sprite.position.y = 3.2;
-    group.add(b.sprite);
+    b.sprite.position.y = 3.2; group.add(b.sprite);
     return b;
   }
 
@@ -571,12 +595,11 @@ export function init(renderer) {
     if (nick) {
       const sp = document.createElement('span');
       sp.textContent = nick;
-      sp.style.cssText = `color:${hexColorStr(colorHex)};font-weight:bold;flex-shrink:0;font-size:11px;`;
+      sp.style.cssText = `color:${hexStr(colorHex)};font-weight:bold;flex-shrink:0;font-size:11px;`;
       line.appendChild(sp);
     }
     const txt = document.createElement('span');
-    txt.textContent = text;
-    txt.style.color = nick ? '#cbd5e1' : '#475569';
+    txt.textContent = text; txt.style.color = nick ? '#cbd5e1' : '#475569';
     line.appendChild(txt);
     el.prepend(line);
     while (el.children.length > 12) el.removeChild(el.lastChild);
@@ -594,11 +617,24 @@ export function init(renderer) {
   //  키 입력
   // ══════════════════════════════════════════════════════════
   const onKeyDown = e => {
-    if (hud.style.display === 'none') return; // 게임룸에서만
+    if (hud.style.display === 'none') return;
     if (document.activeElement === chatInput) return;
     if (e.code === 'Enter') {
-      chatInput.style.display = 'block';
-      chatInput.value = ''; chatInput.focus();
+      chatInput.style.display = 'block'; chatInput.value = ''; chatInput.focus(); return;
+    }
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (charState !== 'jump' && charState !== 'attack') {
+        charState = 'jump'; jumpTimer = 0;
+        triggerAttackEffect; // 점프는 이펙트 없음
+      }
+      return;
+    }
+    if (e.code === 'KeyF') {
+      if (charState !== 'jump' && charState !== 'attack') {
+        charState = 'attack'; attackTimer = 0;
+        triggerAttackEffect(myGroup);
+      }
       return;
     }
     keys[e.code] = true;
@@ -614,7 +650,7 @@ export function init(renderer) {
   });
 
   // ══════════════════════════════════════════════════════════
-  //  Three.js 씬 초기화 (게임룸 첫 입장 시 한 번만)
+  //  Three.js 씬 초기화
   // ══════════════════════════════════════════════════════════
   let _floorTex = null;
 
@@ -653,8 +689,7 @@ export function init(renderer) {
       new THREE.EdgesGeometry(new THREE.BoxGeometry(40, 0.1, 40)),
       new THREE.LineBasicMaterial({ color: 0x334155 })
     );
-    border.position.y = 0.05;
-    scene.add(border);
+    border.position.y = 0.05; scene.add(border);
 
     [[8,8],[8,-8],[-8,8],[-8,-8],[14,0],[0,14],[-14,0],[0,-14]].forEach(([x,z]) => {
       const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 1.6, 6),
@@ -680,6 +715,7 @@ export function init(renderer) {
   const _mov = new THREE.Vector3();
   const _tgt = new THREE.Vector3();
   let syncTimer = 0, statTimer = 0;
+  const elState = hud.querySelector('#hud-state');
 
   function animate() {
     animId = requestAnimationFrame(animate);
@@ -687,7 +723,7 @@ export function init(renderer) {
     const delta = Math.min(timer.getDelta(), 0.05);
 
     if (sceneReady && hud.style.display !== 'none') {
-      // 이동
+      // ─── 이동 입력 ──────────────────────────────────────
       const camYaw = Math.atan2(
         camera.position.x - controls.target.x,
         camera.position.z - controls.target.z
@@ -699,40 +735,79 @@ export function init(renderer) {
       if (keys['KeyS'] || keys['ArrowDown'])  _mov.addScaledVector(_fwd, -1);
       if (keys['KeyA'] || keys['ArrowLeft'])  _mov.addScaledVector(_rgt, -1);
       if (keys['KeyD'] || keys['ArrowRight']) _mov.addScaledVector(_rgt,  1);
+      const moving = _mov.lengthSq() > 0;
 
-      if (_mov.lengthSq() > 0) {
+      if (moving) {
         _mov.normalize();
         myX += _mov.x * 6 * delta;
         myZ += _mov.z * 6 * delta;
         myRy = Math.atan2(_mov.x, _mov.z);
-        myGroup.children[0].rotation.z = Math.sin(performance.now() * 0.008) * 0.08;
-      } else {
-        if (myGroup) myGroup.children[0].rotation.z *= 0.8;
       }
       myX = Math.max(-19, Math.min(19, myX));
       myZ = Math.max(-19, Math.min(19, myZ));
+
       if (myGroup) {
-        myGroup.position.set(myX, 0, myZ);
+        myGroup.position.x = myX;
+        myGroup.position.z = myZ;
         myGroup.rotation.y = myRy + Math.PI;
       }
       controls.target.lerp(_tgt.set(myX, 1, myZ), 0.05);
 
-      // 위치 전송
+      // ─── FSM 업데이트 ────────────────────────────────────
+      if (charState === 'jump') {
+        jumpTimer += delta;
+        if (jumpTimer >= JUMP_DUR) {
+          jumpTimer = 0;
+          charState = moving ? 'walk' : 'idle';
+          if (myGroup) myGroup.position.y = 0;
+        }
+      } else if (charState === 'attack') {
+        attackTimer += delta;
+        if (attackTimer >= ATTACK_DUR) {
+          attackTimer = 0;
+          if (myGroup) myGroup.children[0].rotation.x = 0;
+          charState = moving ? 'walk' : 'idle';
+        }
+      } else {
+        charState = moving ? 'walk' : 'idle';
+      }
+
+      // ─── 내 캐릭터 애니메이션 적용 ──────────────────────
+      if (myGroup) applyAnim(myGroup, charState, jumpTimer, attackTimer);
+      if (elState) elState.textContent = charState;
+
+      // ─── 위치 + 상태 전송 ────────────────────────────────
       syncTimer += delta * 1000;
       if (syncTimer >= SYNC_MS && _sendMove) {
         syncTimer -= SYNC_MS;
-        _sendMove({ x: myX, z: myZ, ry: myRy + Math.PI });
+        _sendMove({ x: myX, z: myZ, ry: myRy + Math.PI, state: charState });
         txCount++;
       }
 
-      // 원격 플레이어 보간 + 말풍선
+      // ─── 원격 플레이어 보간 + 애니메이션 ────────────────
       for (const [, p] of remotePlayers) {
+        // 위치 보간
         p.group.position.x = THREE.MathUtils.lerp(p.group.position.x, p.targetX, 0.15);
         p.group.position.z = THREE.MathUtils.lerp(p.group.position.z, p.targetZ, 0.15);
         let rd = p.targetRy - p.group.rotation.y;
         if (rd >  Math.PI) rd -= Math.PI * 2;
         if (rd < -Math.PI) rd += Math.PI * 2;
         p.group.rotation.y += rd * 0.15;
+
+        // 상태 타이머 진행
+        if (p.state === 'jump') {
+          p.jumpTimer = Math.min((p.jumpTimer || 0) + delta, JUMP_DUR);
+        } else {
+          p.jumpTimer = 0;
+        }
+        if (p.state === 'attack') {
+          p.attackTimer = Math.min((p.attackTimer || 0) + delta, ATTACK_DUR);
+        } else {
+          p.attackTimer = 0;
+        }
+        applyAnim(p.group, p.state, p.jumpTimer, p.attackTimer);
+
+        // 말풍선
         if (p.bubble) {
           p.bubble.timer -= delta;
           if (p.bubble.timer <= 0) {
@@ -742,7 +817,7 @@ export function init(renderer) {
         }
       }
 
-      // 내 말풍선
+      // ─── 내 말풍선 ───────────────────────────────────────
       if (myBubble) {
         myBubble.timer -= delta;
         if (myBubble.timer <= 0) {
@@ -751,7 +826,20 @@ export function init(renderer) {
         } else if (myBubble.timer < 1) myBubble.mat.opacity = myBubble.timer;
       }
 
-      // 통계 HUD
+      // ─── 공격 이펙트 업데이트 ────────────────────────────
+      for (let i = attackEffects.length - 1; i >= 0; i--) {
+        const e = attackEffects[i];
+        e.t += delta;
+        e.ring.scale.setScalar(1 + e.t * 5);
+        e.ring.material.opacity = Math.max(0, 1 - e.t / 0.35);
+        if (e.t >= 0.35) {
+          e.group.remove(e.ring);
+          e.ring.geometry.dispose(); e.ring.material.dispose();
+          attackEffects.splice(i, 1);
+        }
+      }
+
+      // ─── 통계 HUD ────────────────────────────────────────
       statTimer += delta;
       if (statTimer >= 1) {
         const tx = hud.querySelector('#hud-tx');
@@ -794,9 +882,13 @@ export function init(renderer) {
     document.body.removeChild(hud);
     document.body.removeChild(chatInput);
     renderer.shadowMap.enabled = false;
-    if (myTagTex) myTagTex.dispose();
+    if (myTagTex)  myTagTex.dispose();
     if (_floorTex) _floorTex.dispose();
     if (myBubble) { myBubble.tex.dispose(); myBubble.mat.dispose(); }
+    for (const e of attackEffects) {
+      e.group.remove(e.ring); e.ring.geometry.dispose(); e.ring.material.dispose();
+    }
+    attackEffects.length = 0;
     removeAllRemotes();
     scene.traverse(obj => {
       if (obj.geometry) obj.geometry.dispose();

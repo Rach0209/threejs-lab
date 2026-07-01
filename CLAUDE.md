@@ -42,7 +42,7 @@ src/
   lessons/
     01-geometry.js       ~ 11-math-viz.js   # 기초 레슨
     12-postprocessing.js ~ 29-decal.js       # 중급 레슨
-    30-fog.js            ~ 37-character.js   # 고급 레슨 (최신)
+    30-fog.js            ~ 38-minimap-hud.js # 고급 레슨 (최신)
 ```
 
 ## 레슨 구조 규칙
@@ -70,3 +70,9 @@ src/
 ```js
 { id: '01', title: '...', desc: '...', fileKey: '01-geometry', file: () => import(...) }
 ```
+
+## 레슨 조작/정보 패널 위치 규칙 (중요)
+- 좌측 하단에 뜨는 레슨 조작 패널(`#xxx-ui`)은 `left: var(--panel-left, 280px);`을 사용해야 함
+  - 하드코딩된 `left: 280px`을 쓰면 안 됨 — 왼쪽 nav 패널이 접혔을 때 같이 안 따라옴
+  - `--panel-left`는 `nav.js`가 nav 패널 펼침/접힘에 따라 `body`에 동적으로 설정 (펼침 280px / 접힘 64px)
+  - 인라인 스타일로 패널을 만드는 레슨(예: 38)도 동일하게 `left:var(--panel-left, 280px)` + `transition:left .25s ease` 적용

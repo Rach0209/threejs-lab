@@ -42,7 +42,9 @@ src/
   lessons/
     01-geometry.js       ~ 11-math-viz.js   # 기초 레슨
     12-postprocessing.js ~ 29-decal.js       # 중급 레슨
-    30-fog.js            ~ 40-pathfinding.js    # 고급 레슨 (최신)
+    30-fog.js            ~ 40-pathfinding.js # 고급 레슨
+    41-multiplayer.js                        # WebRTC 멀티플레이어 기초 (Trystero)
+    42-p2p-multiplayer.js                    # P2P 멀티플레이어 심화 (로비/방/FSM/장풍)
 ```
 
 ## 레슨 구조 규칙
@@ -70,6 +72,17 @@ src/
 ```js
 { id: '01', title: '...', desc: '...', fileKey: '01-geometry', file: () => import(...) }
 ```
+
+## Trystero (@trystero-p2p/torrent) API 주의사항 (레슨 41~42)
+- `action.onMessage` 핸들러 두 번째 인자는 `{ peerId }` 객체 — **반드시 구조분해**
+  ```js
+  action.onMessage = (data, { peerId }) => { ... }  // ✅
+  action.onMessage = (data, peerId) => { ... }       // ❌ peerId가 object됨
+  ```
+- `action.send(data, { target: peerId })` — 특정 피어 전송 (options 객체)
+- `action.send(data)` — 전체 브로드캐스트
+- `room.onPeerJoin = handler` — setter 설정 즉시 기존 연결 피어에 대해 동기 호출됨
+- `room.onPeerJoin` / `room.onPeerLeave` 콜백은 string peerId 그대로 받음 (action과 다름)
 
 ## 레슨 조작/정보 패널 위치 규칙 (중요)
 - 좌측 하단에 뜨는 레슨 조작 패널(`#xxx-ui`)은 `left: var(--panel-left, 280px);`을 사용해야 함

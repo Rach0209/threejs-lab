@@ -315,13 +315,12 @@ export function init(renderer) {
   function enterLobby() {
     if (lobbyRoom) return;
     lobbyRoom = joinRoom({ appId: APP_ID }, LOBBY_ROOM);
-    [_sendRoomInfo] = lobbyRoom.makeAction('room');
-    const [, onRoom] = lobbyRoom.makeAction('room');
-
-    onRoom(data => {
+    const roomAction = lobbyRoom.makeAction('room');
+    _sendRoomInfo = (data) => roomAction.send(data);
+    roomAction.onMessage = data => {
       roomList.set(data.roomId, { ...data, lastSeen: Date.now() });
       renderRoomList();
-    });
+    };
 
     // 오래된 방 정기 정리
     const pruneId = setInterval(() => {
@@ -426,51 +425,51 @@ export function init(renderer) {
 
     gameRoom = joinRoom({ appId: APP_ID }, roomId);
 
-    const [sendAnnounce, onAnnounce] = gameRoom.makeAction('announce');
-    const [sendMove,     onMove]     = gameRoom.makeAction('move');
-    const [sendChat,     onChat]     = gameRoom.makeAction('chat');
-    const [sendHostTake, onHostTake] = gameRoom.makeAction('hostTake'); // 방장 승계 알림
+    const announceAction  = gameRoom.makeAction('announce');
+    const moveAction      = gameRoom.makeAction('move');
+    const chatAction      = gameRoom.makeAction('chat');
+    const hostTakeAction  = gameRoom.makeAction('hostTake'); // 방장 승계 알림
 
-    _sendMove = sendMove;
-    _sendChat = sendChat;
+    _sendMove = (data) => moveAction.send(data);
+    _sendChat = (data) => chatAction.send(data);
 
     // 새 피어 접속 → 내 현재 상태 전송
-    gameRoom.onPeerJoin(peerId => {
-      sendAnnounce({ nick: myNick, color: MY_COLOR, x: myX, z: myZ }, [peerId]);
-    });
+    gameRoom.onPeerJoin = peerId => {
+      announceAction.send({ nick: myNick, color: MY_COLOR, x: myX, z: myZ }, { target: peerId });
+    };
 
     // 피어 퇴장
-    gameRoom.onPeerLeave(peerId => {
+    gameRoom.onPeerLeave = peerId => {
       removeRemote(peerId);
-      if (peerId === hostId) checkHostSuccession(sendHostTake);
-    });
+      if (peerId === hostId) checkHostSuccession(hostTakeAction);
+    };
 
     // 입장 시 내 정보 수신 (다른 플레이어가 보내준 것)
-    onAnnounce((data, peerId) => {
+    announceAction.onMessage = (data, peerId) => {
       addRemote(peerId, data.nick, data.color, data.x, data.z);
-    });
+    };
 
     // 이동 수신
-    onMove((data, peerId) => {
+    moveAction.onMessage = (data, peerId) => {
       const p = remotePlayers.get(peerId);
       if (!p) return;
       p.targetX = data.x; p.targetZ = data.z; p.targetRy = data.ry;
       rxCount++;
-    });
+    };
 
     // 채팅 수신
-    onChat((data, peerId) => {
+    chatAction.onMessage = (data, peerId) => {
       const p = remotePlayers.get(peerId);
       if (p) p.bubble = showBubble(p.group, p.bubble, data.text, p.colorHex);
       addChatLog(data.nick, data.color, data.text);
       rxCount++;
-    });
+    };
 
     // 방장 승계 알림 수신 (새 방장이 선언)
-    onHostTake(data => {
+    hostTakeAction.onMessage = data => {
       hostId = data.hostId;
       addChatLog(null, null, `👑 ${data.nick} 님이 방장이 되었습니다`);
-    });
+    };
   }
 
   // ══════════════════════════════════════════════════════════
@@ -478,13 +477,13 @@ export function init(renderer) {
   //  퇴장한 피어가 방장이면, 남은 피어(+ 나) 중 selfId 정렬 최솟값이 새 방장
   //  → 모든 피어가 독립적으로 같은 결론에 도달 (결정적 알고리즘)
   // ══════════════════════════════════════════════════════════
-  function checkHostSuccession(sendHostTake) {
+  function checkHostSuccession(hostTakeAction) {
     const allIds = [...Object.keys(gameRoom.getPeers()), selfId].sort();
     if (allIds[0] !== selfId) return; // 내가 최솟값이 아니면 아무것도 안 함
     // 내가 새 방장
     hostId = selfId;
     startAnnouncing(currentRoomTitle, myNick);
-    sendHostTake({ hostId: selfId, nick: myNick }); // 다른 피어에게 알림
+    hostTakeAction.send({ hostId: selfId, nick: myNick }); // 다른 피어에게 알림
     addChatLog(null, null, `👑 방장이 되었습니다`);
   }
 

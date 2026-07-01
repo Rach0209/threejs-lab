@@ -616,17 +616,30 @@ export function init(renderer) {
   // ══════════════════════════════════════════════════════════
   //  키 입력
   // ══════════════════════════════════════════════════════════
+  let chatOpen = false;
+
+  chatInput.addEventListener('keydown', e => {
+    e.stopImmediatePropagation();
+    if (e.code === 'Enter') {
+      sendChat(chatInput.value.trim());
+      chatInput.style.display = 'none'; chatInput.blur(); chatOpen = false;
+    }
+    if (e.code === 'Escape') {
+      chatInput.style.display = 'none'; chatInput.blur(); chatOpen = false;
+    }
+  });
+
   const onKeyDown = e => {
     if (hud.style.display === 'none') return;
-    if (document.activeElement === chatInput) return;
+    if (chatOpen) return;
     if (e.code === 'Enter') {
+      chatOpen = true;
       chatInput.style.display = 'block'; chatInput.value = ''; chatInput.focus(); return;
     }
     if (e.code === 'Space') {
       e.preventDefault();
       if (charState !== 'jump' && charState !== 'attack') {
         charState = 'jump'; jumpTimer = 0;
-        triggerAttackEffect; // 점프는 이펙트 없음
       }
       return;
     }
@@ -642,12 +655,6 @@ export function init(renderer) {
   const onKeyUp = e => { keys[e.code] = false; };
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup',   onKeyUp);
-
-  chatInput.addEventListener('keydown', e => {
-    e.stopPropagation();
-    if (e.code === 'Enter')  { sendChat(chatInput.value.trim()); chatInput.style.display = 'none'; chatInput.blur(); }
-    if (e.code === 'Escape') { chatInput.style.display = 'none'; chatInput.blur(); }
-  });
 
   // ══════════════════════════════════════════════════════════
   //  Three.js 씬 초기화

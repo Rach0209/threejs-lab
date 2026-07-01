@@ -302,23 +302,8 @@ export function init(renderer) {
     txCount++;
   }
 
-  // ─── 키 입력 ─────────────────────────────────────────────
-  const onKeyDown = e => {
-    // 채팅 입력 중엔 게임 키 무시
-    if (document.activeElement === chatInput) return;
-    if (e.code === 'Enter') {
-      chatInput.style.display = 'block';
-      chatInput.value = '';
-      chatInput.focus();
-      return;
-    }
-    keys[e.code] = true;
-  };
-  const onKeyUp = e => { keys[e.code] = false; };
-  window.addEventListener('keydown', onKeyDown);
-  window.addEventListener('keyup',   onKeyUp);
-
   // ─── 채팅 입력창 DOM ────────────────────────────────────
+  let chatOpen = false;
   const chatInput = document.createElement('input');
   chatInput.type = 'text';
   chatInput.maxLength = 40;
@@ -333,18 +318,36 @@ export function init(renderer) {
     outline:none;z-index:1000;
   `;
   chatInput.addEventListener('keydown', e => {
-    e.stopPropagation();
+    e.stopImmediatePropagation();
     if (e.code === 'Enter') {
       sendChat(chatInput.value.trim());
       chatInput.style.display = 'none';
       chatInput.blur();
+      chatOpen = false;
     }
     if (e.code === 'Escape') {
       chatInput.style.display = 'none';
       chatInput.blur();
+      chatOpen = false;
     }
   });
   document.body.appendChild(chatInput);
+
+  // ─── 키 입력 ─────────────────────────────────────────────
+  const onKeyDown = e => {
+    if (chatOpen) return;
+    if (e.code === 'Enter') {
+      chatOpen = true;
+      chatInput.style.display = 'block';
+      chatInput.value = '';
+      chatInput.focus();
+      return;
+    }
+    keys[e.code] = true;
+  };
+  const onKeyUp = e => { keys[e.code] = false; };
+  window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup',   onKeyUp);
 
   // ─── HUD ─────────────────────────────────────────────────
   const hud = document.createElement('div');

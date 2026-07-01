@@ -479,7 +479,7 @@ export function init(renderer) {
   //  → 모든 피어가 독립적으로 같은 결론에 도달 (결정적 알고리즘)
   // ══════════════════════════════════════════════════════════
   function checkHostSuccession(sendHostTake) {
-    const allIds = [...gameRoom.getPeers(), selfId].sort();
+    const allIds = [...Object.keys(gameRoom.getPeers()), selfId].sort();
     if (allIds[0] !== selfId) return; // 내가 최솟값이 아니면 아무것도 안 함
     // 내가 새 방장
     hostId = selfId;
@@ -650,10 +650,12 @@ export function init(renderer) {
     floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
     scene.add(floor);
 
-    scene.add(Object.assign(new THREE.LineSegments(
+    const border = new THREE.LineSegments(
       new THREE.EdgesGeometry(new THREE.BoxGeometry(40, 0.1, 40)),
       new THREE.LineBasicMaterial({ color: 0x334155 })
-    ), { position: new THREE.Vector3(0, 0.05, 0) }));
+    );
+    border.position.y = 0.05;
+    scene.add(border);
 
     [[8,8],[8,-8],[-8,8],[-8,-8],[14,0],[0,14],[-14,0],[0,-14]].forEach(([x,z]) => {
       const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 1.6, 6),

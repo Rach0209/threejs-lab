@@ -399,12 +399,12 @@ export function init(renderer) {
       position:absolute;left:50%;transform:translateX(-50%);bottom:20px;
       background:rgba(0,0,0,.75);border:1px solid #334155;
       border-radius:8px;padding:10px 14px;width:320px;
-      pointer-events:none;
+      pointer-events:auto;
     ">
       <div style="color:#94a3b8;font-size:11px;font-weight:bold;margin-bottom:6px;">채팅 · Enter로 입력</div>
       <div id="mp-chat" style="
         display:flex;flex-direction:column;gap:4px;
-        font-size:12px;max-height:180px;overflow:hidden;
+        font-size:12px;max-height:180px;overflow-y:auto;
       "></div>
     </div>
   `;
@@ -432,8 +432,9 @@ export function init(renderer) {
     txtSpan.textContent = text;
     txtSpan.style.color = id ? '#cbd5e1' : '#475569';
     line.appendChild(txtSpan);
-    elChat.prepend(line);
-    while (elChat.children.length > 12) elChat.removeChild(elChat.lastChild);
+    elChat.appendChild(line);
+    while (elChat.children.length > 30) elChat.removeChild(elChat.firstChild);
+    elChat.scrollTop = elChat.scrollHeight;
   }
 
   // ─── 애니메이션 루프 ─────────────────────────────────────

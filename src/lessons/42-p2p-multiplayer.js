@@ -238,6 +238,7 @@ export function init(renderer) {
   let lobbyRoom = null, gameRoom = null;
   let _sendRoomInfo = null, _sendMove = null, _sendChat = null, _sendFire = null;
   let announceInterval = null;
+  let reAnnounceId    = null;   // 게임룸 내 주기적 재공지 (announce 유실 대비)
   let currentRoomId = null, currentRoomTitle = '';
   let hostId = null;
   let sceneReady = false;
@@ -357,12 +358,12 @@ export function init(renderer) {
     </div>
     <div style="position:absolute;left:50%;transform:translateX(-50%);bottom:20px;
       background:rgba(0,0,0,.78);border:1px solid #334155;border-radius:8px;
-      padding:10px 14px;width:320px;">
+      padding:10px 14px;width:320px;pointer-events:auto;">
       <div style="color:#94a3b8;font-size:11px;font-weight:bold;margin-bottom:6px;">
         채팅 <span style="color:#334155;">· Enter로 입력</span>
       </div>
       <div id="hud-chat" style="display:flex;flex-direction:column;gap:4px;
-        font-size:12px;max-height:160px;overflow:hidden;"></div>
+        font-size:12px;max-height:180px;overflow-y:auto;"></div>
     </div>
   `;
   document.body.appendChild(hud);
@@ -418,6 +419,18 @@ export function init(renderer) {
     lobbyRoom = joinRoom({ appId: APP_ID }, LOBBY_ROOM);
     const roomAction = lobbyRoom.makeAction('room');
     _sendRoomInfo = (data) => roomAction.send(data);
+
+    // 새 피어가 로비에 연결되면 즉시 현재 방 정보를 1:1 전송
+    // (setInterval 대기 없이 바로 방 목록에 반영됨)
+    lobbyRoom.onPeerJoin = (peerId) => {
+      if (!announceInterval || !currentRoomId) return;
+      roomAction.send(
+        { roomId: currentRoomId, title: currentRoomTitle,
+          creatorNick: myNick, count: remotePlayers.size + 1, hostId: selfId },
+        { target: peerId }
+      );
+    };
+
     roomAction.onMessage = data => {
       roomList.set(data.roomId, { ...data, lastSeen: Date.now() });
       renderRoomList();
@@ -514,6 +527,13 @@ export function init(renderer) {
     _sendChat = (data) => chatAction.send(data);
     _sendFire = (data) => fireAction.send(data);
 
+    // 연결 초기에 announce가 유실될 수 있어 주기적으로 재공지
+    // 이미 아는 피어는 addRemote 내부에서 중복 무시됨
+    if (reAnnounceId) clearInterval(reAnnounceId);
+    reAnnounceId = setInterval(() => {
+      announceAction.send({ nick: myNick, color: MY_COLOR, x: myX, z: myZ, state: charState });
+    }, 4000);
+
     gameRoom.onPeerJoin = peerId => {
       announceAction.send(
         { nick: myNick, color: MY_COLOR, x: myX, z: myZ, state: charState },
@@ -580,6 +600,7 @@ export function init(renderer) {
 
   function leaveGame() {
     stopAnnouncing();
+    if (reAnnounceId) { clearInterval(reAnnounceId); reAnnounceId = null; }
     if (gameRoom) { gameRoom.leave(); gameRoom = null; }
     _sendMove = null; _sendChat = null; _sendFire = null;
     removeAllRemotes();
@@ -657,8 +678,9 @@ export function init(renderer) {
     const txt = document.createElement('span');
     txt.textContent = text; txt.style.color = nick ? '#cbd5e1' : '#475569';
     line.appendChild(txt);
-    el.prepend(line);
-    while (el.children.length > 12) el.removeChild(el.lastChild);
+    el.appendChild(line);
+    while (el.children.length > 30) el.removeChild(el.firstChild);
+    el.scrollTop = el.scrollHeight;
   }
 
   function sendChat(text) {
@@ -920,6 +942,7 @@ export function init(renderer) {
     cancelAnimationFrame(animId);
     timer.dispose();
     stopAnnouncing();
+    if (reAnnounceId)  { clearInterval(reAnnounceId);  reAnnounceId = null; }
     if (_lobbyPruneId) clearInterval(_lobbyPruneId);
     if (gameRoom)  gameRoom.leave();
     if (lobbyRoom) lobbyRoom.leave();

@@ -561,11 +561,11 @@ export function init(renderer) {
       if (peerId === hostId) checkHostSuccession(hostTakeAction);
     };
 
-    announceAction.onMessage = (data, peerId) => {
+    announceAction.onMessage = (data, { peerId }) => {
       addRemote(peerId, data.nick, data.color, data.x, data.z, data.state);
     };
 
-    moveAction.onMessage = (data, peerId) => {
+    moveAction.onMessage = (data, { peerId }) => {
       const p = remotePlayers.get(peerId);
       if (!p) return;
       p.targetX = data.x; p.targetZ = data.z; p.targetRy = data.ry;
@@ -583,7 +583,7 @@ export function init(renderer) {
       rxCount++;
     };
 
-    chatAction.onMessage = (data, peerId) => {
+    chatAction.onMessage = (data, { peerId }) => {
       const p = remotePlayers.get(peerId);
       if (p) p.bubble = showBubble(p.group, p.bubble, data.text, p.colorHex);
       addChatLog(data.nick, data.color, data.text);

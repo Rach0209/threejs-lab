@@ -310,7 +310,7 @@ export function init(renderer) {
   chatInput.placeholder = 'Enter 전송 / Esc 취소';
   chatInput.style.cssText = `
     position:fixed;bottom:70px;left:50%;transform:translateX(-50%);
-    width:380px;display:none;
+    width:clamp(300px,30vw,560px);display:none;
     background:rgba(10,10,20,.92);
     border:2px solid #6366f1;border-radius:10px;
     padding:10px 16px;
@@ -398,7 +398,7 @@ export function init(renderer) {
     <div style="
       position:absolute;left:50%;transform:translateX(-50%);bottom:20px;
       background:rgba(0,0,0,.75);border:1px solid #334155;
-      border-radius:8px;padding:10px 14px;width:320px;
+      border-radius:8px;padding:10px 14px;width:clamp(300px,30vw,560px);
       pointer-events:auto;
     ">
       <div style="color:#94a3b8;font-size:11px;font-weight:bold;margin-bottom:6px;">채팅 · Enter로 입력</div>

@@ -6,7 +6,17 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  /* 스크롤바 통일: 얇은 인디고 계열 */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.4) transparent;
 }
+*::-webkit-scrollbar { width: 4px; height: 4px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.4);
+  border-radius: 2px;
+}
+*::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.7); }
 
 body {
   background: #000;
@@ -110,15 +120,7 @@ canvas {
   min-width: 480px;
 }
 
-.code-panel-body::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-.code-panel-body::-webkit-scrollbar-track { background: transparent; }
-.code-panel-body::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.1);
-  border-radius: 3px;
-}
+
 
 #code-pre {
   margin: 0;
@@ -621,23 +623,8 @@ canvas {
   overflow-y: auto;
   padding: 16px 8px;
   transition: opacity 0.2s;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(99, 102, 241, 0.4) transparent;
 }
 
-.nav-body::-webkit-scrollbar {
-  width: 4px;
-}
-.nav-body::-webkit-scrollbar-track {
-  background: transparent;
-}
-.nav-body::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.4);
-  border-radius: 2px;
-}
-.nav-body::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.7);
-}
 
 .nav-section-title {
   font-size: 10px;

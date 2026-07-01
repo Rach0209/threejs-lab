@@ -393,12 +393,12 @@ export function init(renderer) {
 
     <!-- 채팅 로그 -->
     <div style="
-      position:absolute;right:20px;bottom:20px;
+      position:absolute;left:50%;transform:translateX(-50%);bottom:20px;
       background:rgba(0,0,0,.75);border:1px solid #334155;
-      border-radius:8px;padding:10px 14px;width:260px;
+      border-radius:8px;padding:10px 14px;width:320px;
       pointer-events:none;
     ">
-      <div style="color:#94a3b8;font-size:11px;font-weight:bold;margin-bottom:6px;">채팅</div>
+      <div style="color:#94a3b8;font-size:11px;font-weight:bold;margin-bottom:6px;">채팅 · Enter로 입력</div>
       <div id="mp-chat" style="
         display:flex;flex-direction:column;gap:4px;
         font-size:12px;max-height:180px;overflow:hidden;

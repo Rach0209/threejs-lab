@@ -307,7 +307,11 @@ export function init(renderer) {
                   display:flex;flex-direction:column;overflow:hidden;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
           <div style="color:#94a3b8;font-size:12px;font-weight:bold;">방 목록</div>
-          <div style="color:#334155;font-size:11px;">자동 갱신</div>
+          <button id="refresh-btn"
+            style="padding:3px 10px;background:#1e293b;border:1px solid #334155;border-radius:6px;
+                   color:#94a3b8;font-size:11px;cursor:pointer;font-family:inherit;">
+            ↻ 새로고침
+          </button>
         </div>
         <div id="room-list-el" style="display:flex;flex-direction:column;gap:8px;overflow-y:auto;flex:1;"></div>
         <div id="no-rooms-el" style="color:#334155;font-size:13px;text-align:center;margin:auto;">
@@ -430,6 +434,7 @@ export function init(renderer) {
     if (lobbyRoom) return;
     lobbyRoom = joinRoom(TRYSTERO_CONFIG, LOBBY_ROOM);
     const roomAction = lobbyRoom.makeAction('room');
+    const pingAction = lobbyRoom.makeAction('ping');
     _sendRoomInfo = (data) => roomAction.send(data);
 
     // 새 피어가 로비에 연결되면 즉시 현재 방 정보를 1:1 전송
@@ -447,6 +452,26 @@ export function init(renderer) {
       roomList.set(data.roomId, { ...data, lastSeen: Date.now() });
       renderRoomList();
     };
+
+    // ping 수신 시: 방 창설자면 즉시 방 정보 응답
+    pingAction.onMessage = (_, { peerId }) => {
+      if (!announceInterval || !currentRoomId) return;
+      roomAction.send(
+        { roomId: currentRoomId, title: currentRoomTitle,
+          creatorNick: myNick, count: remotePlayers.size + 1, hostId: selfId },
+        { target: peerId }
+      );
+    };
+
+    // 새로고침 버튼: 전체 피어에 ping 브로드캐스트
+    const refreshBtn = lobbyScreen.querySelector('#refresh-btn');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => {
+        pingAction.send({});
+        refreshBtn.textContent = '↻ …';
+        setTimeout(() => { refreshBtn.textContent = '↻ 새로고침'; }, 800);
+      });
+    }
     _lobbyPruneId = setInterval(() => {
       const now = Date.now(); let changed = false;
       for (const [id, r] of roomList) {

@@ -265,6 +265,13 @@ export const LESSONS = [
     fileKey: '37-character',
     file: () => import('../lessons/37-character.js'),
   },
+  {
+    id: '38',
+    title: '미니맵 / HUD',
+    desc: 'OrthographicCamera, Viewport+Scissor, 나침반·좌표·FPS 오버레이',
+    fileKey: '38-minimap-hud',
+    file: () => import('../lessons/38-minimap-hud.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)
@@ -310,13 +317,22 @@ export function createNav(onSelect) {
     toggle.style.left = left + 'px';
   }
 
+  // 레슨 조작/정보 패널들의 left 값(CSS 변수 --panel-left)을 nav 패널 상태에 맞춰 갱신
+  //  펼침: 260px 패널 + 20px 여백 = 280px
+  //  접힘: 48px 패널 + 16px 여백 = 64px
+  function updatePanelLeftVar() {
+    document.body.style.setProperty('--panel-left', collapsed ? '64px' : '280px');
+  }
+
   toggle.addEventListener('click', () => {
     collapsed = !collapsed;
     panel.classList.toggle('collapsed', collapsed);
     updateTogglePos();
+    updatePanelLeftVar();
   });
 
-  updateTogglePos(); // 초기 위치 설정
+  updateTogglePos();     // 초기 위치 설정
+  updatePanelLeftVar();  // 초기 --panel-left 설정
 
   // ─── 툴팁 (body에 fixed로 띄움) ────────────────────────────
   const tooltip = document.createElement('div');

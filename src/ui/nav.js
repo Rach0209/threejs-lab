@@ -286,6 +286,13 @@ export const LESSONS = [
     fileKey: '40-pathfinding',
     file: () => import('../lessons/40-pathfinding.js'),
   },
+  {
+    id: '41',
+    title: '멀티플레이어 기초',
+    desc: 'BroadcastChannel, 메시지 프로토콜, 위치 동기화, Lerp 보간',
+    fileKey: '41-multiplayer',
+    file: () => import('../lessons/41-multiplayer.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

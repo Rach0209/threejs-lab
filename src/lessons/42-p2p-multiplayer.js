@@ -27,6 +27,18 @@ import { joinRoom, selfId } from '@trystero-p2p/torrent';
 // ─── 상수 ─────────────────────────────────────────────────────
 const APP_ID       = 'threejs-lab-42-v1';
 const LOBBY_ROOM   = '__lobby__';
+
+// Trystero 기본 트래커(openwebtorrent)가 불안정할 때 대비해 여러 트래커 지정
+// 하나라도 살아있으면 피어 발견 가능
+const TRYSTERO_CONFIG = {
+  appId: APP_ID,
+  trackerUrls: [
+    'wss://tracker.webtorrent.dev',
+    'wss://tracker.btorrent.xyz',
+    'wss://tracker.openwebtorrent.com',
+    'wss://tracker.fastcast.nz',
+  ],
+};
 const SYNC_MS      = 50;
 const ANNOUNCE_MS  = 2000;
 const ROOM_TIMEOUT = 6000;
@@ -416,7 +428,7 @@ export function init(renderer) {
   // ══════════════════════════════════════════════════════════
   function enterLobby() {
     if (lobbyRoom) return;
-    lobbyRoom = joinRoom({ appId: APP_ID }, LOBBY_ROOM);
+    lobbyRoom = joinRoom(TRYSTERO_CONFIG, LOBBY_ROOM);
     const roomAction = lobbyRoom.makeAction('room');
     _sendRoomInfo = (data) => roomAction.send(data);
 
@@ -515,7 +527,7 @@ export function init(renderer) {
     currentRoomId = roomId; currentRoomTitle = title; hostId = _hostId;
     if (!sceneReady) initScene();
 
-    gameRoom = joinRoom({ appId: APP_ID }, roomId);
+    gameRoom = joinRoom(TRYSTERO_CONFIG, roomId);
 
     const announceAction = gameRoom.makeAction('announce');
     const moveAction     = gameRoom.makeAction('move');

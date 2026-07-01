@@ -42,7 +42,7 @@ src/
   lessons/
     01-geometry.js       ~ 11-math-viz.js   # 기초 레슨
     12-postprocessing.js ~ 29-decal.js       # 중급 레슨
-    30-fog.js            ~ 39-state-machine.js # 고급 레슨 (최신)
+    30-fog.js            ~ 40-pathfinding.js    # 고급 레슨 (최신)
 ```
 
 ## 레슨 구조 규칙

@@ -272,6 +272,13 @@ export const LESSONS = [
     fileKey: '38-minimap-hud',
     file: () => import('../lessons/38-minimap-hud.js'),
   },
+  {
+    id: '39',
+    title: '상태 머신 (FSM)',
+    desc: 'State/StateMachine 클래스, 전이 규칙, 캐릭터 AI 적용',
+    fileKey: '39-state-machine',
+    file: () => import('../lessons/39-state-machine.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

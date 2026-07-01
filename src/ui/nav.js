@@ -279,6 +279,13 @@ export const LESSONS = [
     fileKey: '39-state-machine',
     file: () => import('../lessons/39-state-machine.js'),
   },
+  {
+    id: '40',
+    title: '경로탐색 A*',
+    desc: 'A* 알고리즘 직접 구현, 오픈/클로즈드 셋 시각화, 에이전트 이동',
+    fileKey: '40-pathfinding',
+    file: () => import('../lessons/40-pathfinding.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

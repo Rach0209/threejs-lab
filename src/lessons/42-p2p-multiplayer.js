@@ -540,10 +540,13 @@ export function init(renderer) {
     _sendFire = (data) => fireAction.send(data);
 
     // 연결 초기에 announce가 유실될 수 있어 주기적으로 재공지
-    // 이미 아는 피어는 addRemote 내부에서 중복 무시됨
+    // 단, 이미 피어가 연결되어 있으면 재공지하지 않음
+    // (매번 보내면 addRemote가 반복 호출되어 "입장" 메시지가 계속 뜸)
     if (reAnnounceId) clearInterval(reAnnounceId);
     reAnnounceId = setInterval(() => {
-      announceAction.send({ nick: myNick, color: MY_COLOR, x: myX, z: myZ, state: charState });
+      if (remotePlayers.size === 0) {
+        announceAction.send({ nick: myNick, color: MY_COLOR, x: myX, z: myZ, state: charState });
+      }
     }, 4000);
 
     gameRoom.onPeerJoin = peerId => {

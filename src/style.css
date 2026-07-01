@@ -12,6 +12,8 @@ body {
   background: #000;
   overflow: hidden;
   font-family: 'Segoe UI', system-ui, sans-serif;
+  /* 왼쪽 레슨 패널들의 left 값 — nav-panel 펼침/접힘에 따라 nav.js가 갱신 */
+  --panel-left: 280px;
 }
 
 canvas {
@@ -276,7 +278,8 @@ canvas {
 #inst-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -284,7 +287,8 @@ canvas {
 #env-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -292,7 +296,8 @@ canvas {
 #anim-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -300,7 +305,8 @@ canvas {
 #terrain-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -308,7 +314,8 @@ canvas {
 #toon-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -316,7 +323,8 @@ canvas {
 #raycast-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -324,7 +332,8 @@ canvas {
 #reflect-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -332,7 +341,8 @@ canvas {
 #shadow-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -340,7 +350,8 @@ canvas {
 #lod-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -348,7 +359,8 @@ canvas {
 #sprite-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -356,7 +368,8 @@ canvas {
 #bufgeo-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -364,7 +377,8 @@ canvas {
 #audio-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -372,7 +386,8 @@ canvas {
 #rt-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -380,7 +395,8 @@ canvas {
 #gpgpu-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -388,7 +404,8 @@ canvas {
 #skin-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -396,7 +413,8 @@ canvas {
 #csg-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -404,7 +422,8 @@ canvas {
 #decal-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -412,7 +431,8 @@ canvas {
 #fog-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -420,7 +440,8 @@ canvas {
 #water-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -428,7 +449,8 @@ canvas {
 #pp-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -436,7 +458,8 @@ canvas {
 #envmap-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
@@ -444,27 +467,33 @@ canvas {
 #inst-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px;
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease;
   z-index: 100;
 }
 
 /* 35 LOD */
-#lod-ui { position: fixed; bottom: 20px; left: 280px; z-index: 100; }
+#lod-ui { position: fixed; bottom: 20px; left: var(--panel-left, 280px);
+  transition: left 0.25s ease; z-index: 100; }
 
 /* 36 Shadow */
-#shadow-ui { position: fixed; bottom: 20px; left: 280px; z-index: 100; }
+#shadow-ui { position: fixed; bottom: 20px; left: var(--panel-left, 280px);
+  transition: left 0.25s ease; z-index: 100; }
 
 /* 37 Noise */
-#noise-ui { position: fixed; bottom: 20px; left: 280px; z-index: 100; }
+#noise-ui { position: fixed; bottom: 20px; left: var(--panel-left, 280px);
+  transition: left 0.25s ease; z-index: 100; }
 
 /* 38 Character */
-#char-ui { position: fixed; bottom: 20px; left: 280px; z-index: 100; }
+#char-ui { position: fixed; bottom: 20px; left: var(--panel-left, 280px);
+  transition: left 0.25s ease; z-index: 100; }
 
 /* 12 후처리 — 컨트롤 패널 */
 #pp-ui {
   position: fixed;
   bottom: 20px;
-  left: 280px; /* nav 패널 옆 */
+  left: var(--panel-left, 280px);
+  transition: left 0.25s ease; /* nav 패널 옆 */
   z-index: 100;
 }
 

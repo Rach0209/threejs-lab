@@ -265,9 +265,11 @@ export function init(renderer) {
   // ══════════════════════════════════════════════════════════
   const nickScreen = document.createElement('div');
   nickScreen.style.cssText = `
-    position:fixed;inset:0;background:rgba(8,10,20,.97);
+    position:fixed;top:0;right:0;bottom:0;left:var(--panel-left,280px);
+    background:rgba(8,10,20,.97);
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:18px;z-index:600;font-family:"Courier New",monospace;
+    transition:left .25s ease;
   `;
   nickScreen.innerHTML = `
     <div style="color:#e2e8f0;font-size:26px;font-weight:bold;letter-spacing:2px;">🌐 P2P 멀티플레이어</div>
@@ -290,9 +292,11 @@ export function init(renderer) {
   // ══════════════════════════════════════════════════════════
   const lobbyScreen = document.createElement('div');
   lobbyScreen.style.cssText = `
-    position:fixed;inset:0;background:rgba(8,10,20,.96);
+    position:fixed;top:0;right:0;bottom:0;left:var(--panel-left,280px);
+    background:rgba(8,10,20,.96);
     display:none;flex-direction:column;
     z-index:500;font-family:"Courier New",monospace;padding:32px;box-sizing:border-box;
+    transition:left .25s ease;
   `;
   lobbyScreen.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">

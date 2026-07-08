@@ -537,7 +537,7 @@ canvas {
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
-  z-index: 100;
+  z-index: 700;
   transition: width 0.25s ease;
   overflow: hidden;
 }
@@ -605,7 +605,7 @@ canvas {
   color: #94a3b8;
   font-size: 16px;
   cursor: pointer;
-  z-index: 200;
+  z-index: 701;
   transition: left 0.25s ease, color 0.2s;
   display: flex;
   align-items: center;

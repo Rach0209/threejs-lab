@@ -49,5 +49,8 @@ async function loadLesson(lesson) {
   }
 }
 
+// 레슨 내부에서 홈(레슨 목록)으로 돌아갈 때 사용하는 커스텀 이벤트
+window.addEventListener('lesson-nav-home', () => loadLesson(LESSONS[0]));
+
 // ─── 앱 시작: 첫 번째 레슨 자동 로드 ─────────────────────────
 loadLesson(LESSONS[0]);

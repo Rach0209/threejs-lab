@@ -296,9 +296,16 @@ export function init(renderer) {
   `;
   lobbyScreen.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <div>
-        <div style="color:#e2e8f0;font-size:18px;font-weight:bold;">🎮 로비</div>
-        <div id="lobby-my-nick" style="color:#6366f1;font-size:12px;margin-top:2px;"></div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <button id="lobby-home-btn"
+          style="padding:5px 13px;background:#1e293b;border:1px solid #334155;border-radius:7px;
+                 color:#94a3b8;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap;">
+          ← 나가기
+        </button>
+        <div>
+          <div style="color:#e2e8f0;font-size:18px;font-weight:bold;">🎮 로비</div>
+          <div id="lobby-my-nick" style="color:#6366f1;font-size:12px;margin-top:2px;"></div>
+        </div>
       </div>
       <div style="color:#475569;font-size:11px;">Trystero P2P · 노서버</div>
     </div>
@@ -430,6 +437,10 @@ export function init(renderer) {
   // ══════════════════════════════════════════════════════════
   //  로비 입장
   // ══════════════════════════════════════════════════════════
+  lobbyScreen.querySelector('#lobby-home-btn').addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('lesson-nav-home'));
+  });
+
   function enterLobby() {
     if (lobbyRoom) return;
     lobbyRoom = joinRoom(TRYSTERO_CONFIG, LOBBY_ROOM);

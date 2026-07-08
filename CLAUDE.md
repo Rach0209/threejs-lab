@@ -89,3 +89,13 @@ src/
   - 하드코딩된 `left: 280px`을 쓰면 안 됨 — 왼쪽 nav 패널이 접혔을 때 같이 안 따라옴
   - `--panel-left`는 `nav.js`가 nav 패널 펼침/접힘에 따라 `body`에 동적으로 설정 (펼침 280px / 접힘 64px)
   - 인라인 스타일로 패널을 만드는 레슨(예: 38)도 동일하게 `left:var(--panel-left, 280px)` + `transition:left .25s ease` 적용
+
+## 레슨 내 풀스크린 오버레이 규칙 (중요)
+- 레슨에서 풀스크린 오버레이(닉네임 입력, 로비 등)를 만들 때 **`inset:0` 금지**
+  - nav 패널(z-index:700)과 toggle(z-index:701)이 항상 위에 떠 있어 content가 가려짐
+  - 대신: `top:0; right:0; bottom:0; left:var(--panel-left,280px); transition:left .25s ease;`
+- 레슨에서 홈(레슨01)으로 돌아갈 때는 아래 커스텀 이벤트 사용:
+  ```js
+  window.dispatchEvent(new CustomEvent('lesson-nav-home'));
+  // main.js가 수신 → currentCleanup() 후 loadLesson(LESSONS[0]) 실행
+  ```

@@ -458,7 +458,7 @@ export function init(renderer) {
       if (!announceInterval || !currentRoomId) return;
       roomAction.send(
         { roomId: currentRoomId, title: currentRoomTitle,
-          creatorNick: myNick, count: remotePlayers.size + 1, hostId: selfId },
+          creatorNick: myNick, count: (gameRoom ? Object.keys(gameRoom.getPeers()).length : 0) + 1, hostId: selfId },
         { target: peerId }
       );
     };
@@ -473,7 +473,7 @@ export function init(renderer) {
       if (!announceInterval || !currentRoomId) return;
       roomAction.send(
         { roomId: currentRoomId, title: currentRoomTitle,
-          creatorNick: myNick, count: remotePlayers.size + 1, hostId: selfId },
+          creatorNick: myNick, count: (gameRoom ? Object.keys(gameRoom.getPeers()).length : 0) + 1, hostId: selfId },
         { target: peerId }
       );
     };
@@ -546,7 +546,7 @@ export function init(renderer) {
     const broadcast = () => {
       if (!_sendRoomInfo) return;
       _sendRoomInfo({ roomId: currentRoomId, title, creatorNick,
-                      count: remotePlayers.size + 1, hostId: selfId });
+                      count: (gameRoom ? Object.keys(gameRoom.getPeers()).length : 0) + 1, hostId: selfId });
     };
     broadcast();
     announceInterval = setInterval(broadcast, ANNOUNCE_MS);

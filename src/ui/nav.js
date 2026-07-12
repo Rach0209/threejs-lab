@@ -300,6 +300,13 @@ export const LESSONS = [
     fileKey: '42-p2p-multiplayer',
     file: () => import('../lessons/42-p2p-multiplayer.js'),
   },
+  {
+    id: '43',
+    title: 'Raymarching — SDF 3D',
+    desc: 'SDF 도형 6종, Union/Subtraction/Intersection, Smooth Union 애니메이션',
+    fileKey: '43-raymarching',
+    file: () => import('../lessons/43-raymarching.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

@@ -57,10 +57,6 @@ float hash(vec3 p) {
   return fract((p.x + p.y) * p.z);
 }
 
-float hash2(vec2 p) {
-  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
-}
-
 // Value Noise: 3D 격자점에서 보간
 // smoothstep으로 부드럽게 연결
 float valueNoise(vec3 p) {
@@ -166,12 +162,6 @@ vec2 map(vec3 p) {
 // ══════════════════════════════════════════════════════════════
 //  ③ 절차적 텍스처 (Material)
 // ══════════════════════════════════════════════════════════════
-
-// 색상 보간 헬퍼
-vec3 colorRamp(float t, vec3 a, vec3 b, vec3 c, vec3 d) {
-  // cosine gradient: a + b*cos(2π*(c*t+d))
-  return a + b * cos(6.28318 * (c * t + d));
-}
 
 // ── 대리석 텍스처 ──────────────────────────────────────────
 // 아이디어: sin(x + fbm) → 가늘고 긴 결무늬

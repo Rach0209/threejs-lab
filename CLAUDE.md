@@ -45,6 +45,9 @@ src/
     30-fog.js            ~ 40-pathfinding.js # 고급 레슨
     41-multiplayer.js                        # WebRTC 멀티플레이어 기초 (Trystero)
     42-p2p-multiplayer.js                    # P2P 멀티플레이어 심화 (로비/방/FSM/장풍)
+    43-raymarching.js                        # Raymarching/SDF 입문 (도형6종, 불리언연산, Smooth Union)
+    44-sdf-noise.js                          # SDF 절차적 텍스처 (Hash/ValueNoise/FBM, 대리석/용암/행성)
+    45-sdf-animation.js                      # SDF 애니메이션 (도메인반복/Twist/Wave/Bend, 메타볼)
 ```
 
 ## 레슨 구조 규칙
@@ -99,3 +102,11 @@ src/
   window.dispatchEvent(new CustomEvent('lesson-nav-home'));
   // main.js가 수신 → currentCleanup() 후 loadLesson(LESSONS[0]) 실행
   ```
+
+## Raymarching 레슨 공통 패턴 (레슨 43~45)
+- OrthographicCamera(-1,1,1,-1,0,1) + PlaneGeometry(2,2) 풀스크린 쿼드로 렌더링. THREE 지오메트리 없이 프래그먼트 셰이더가 전부 그림
+- 가상 카메라는 구면좌표(theta/phi/radius) → uCamPos/Right/Up/Fwd uniform으로 전달, 레이 방향은 `uCamRight*uv.x + uCamUp*uv.y + uCamFwd*1.5` (⚠️ `+uCamFwd`, 마이너스 붙이면 씬 반대 방향으로 레이 발사됨 — 43 최초 구현 시 실제 발생한 버그)
+- **마우스 드래그 방향은 반드시 `OrbitControls`와 일치시킬 것**: `theta -= dx*0.007`, `phi -= dy*0.007` (부호 반대로 하면 레슨마다 좌우/상하 반전이 달라져 사용자가 혼란스러움 — 43~45 최초 구현 시 부호가 반대라 수정한 이력 있음)
+- **`uniform int`로 씬 분기 금지** — Windows(HLSL 변환) 환경에서 `uniform int == 상수` 비교가 `X4000: use of potentially uninitialized variable` 경고와 함께 셰이더가 항상 fallback만 반환하는 버그 발생. 반드시 `uniform float` + `if (uScene < 0.5)` 형태의 float 비교 사용
+- SDF 큰값 sentinel은 `1e9` 대신 `99.0` 사용 (HLSL 큰값 처리 불안정성 회피)
+- `map()` 함수는 씬별 서브함수로 분리하고 `if/else if/else` 체인으로 분기 (초기 구현 때 이른 `return`과 다중 `if` 산발 패턴이 HLSL에서 "uninitialized variable" 경고를 유발했음 — 반드시 `float best; if(...) best=... else if(...) ... else ...; return`처럼 단일 반환 지점 사용)

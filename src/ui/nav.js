@@ -307,6 +307,13 @@ export const LESSONS = [
     fileKey: '43-raymarching',
     file: () => import('../lessons/43-raymarching.js'),
   },
+  {
+    id: '44',
+    title: 'SDF 텍스처 & 절차적 노이즈',
+    desc: 'Hash → ValueNoise → FBM → 대리석/용암/행성 절차적 텍스처',
+    fileKey: '44-sdf-noise',
+    file: () => import('../lessons/44-sdf-noise.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

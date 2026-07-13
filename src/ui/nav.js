@@ -314,6 +314,13 @@ export const LESSONS = [
     fileKey: '44-sdf-noise',
     file: () => import('../lessons/44-sdf-noise.js'),
   },
+  {
+    id: '45',
+    title: 'SDF 애니메이션',
+    desc: '도메인 반복(무한복제), Twist/Wave/Bend 변형, 메타볼 Smooth Union',
+    fileKey: '45-sdf-animation',
+    file: () => import('../lessons/45-sdf-animation.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

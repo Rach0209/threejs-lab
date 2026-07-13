@@ -367,7 +367,7 @@ export function init(renderer) {
   const onMove  = e => {
     if (!dragging) return;
     theta -= (e.clientX - lastX) * 0.007;
-    phi    = Math.max(0.08, Math.min(Math.PI - 0.08, phi + (e.clientY - lastY) * 0.007));
+    phi    = Math.max(0.08, Math.min(Math.PI - 0.08, phi - (e.clientY - lastY) * 0.007));
     lastX = e.clientX; lastY = e.clientY;
     updateCamera();
   };

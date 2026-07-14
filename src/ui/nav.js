@@ -321,6 +321,13 @@ export const LESSONS = [
     fileKey: '45-sdf-animation',
     file: () => import('../lessons/45-sdf-animation.js'),
   },
+  {
+    id: '46',
+    title: 'Mandelbrot — 2D 프랙탈',
+    desc: '복소수 반복 z=z²+c, 탈출시간 Smooth Coloring, 커서중심 무한 줌',
+    fileKey: '46-mandelbrot',
+    file: () => import('../lessons/46-mandelbrot.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

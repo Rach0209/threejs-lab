@@ -342,6 +342,13 @@ export const LESSONS = [
     fileKey: '48-sdf-fractal',
     file: () => import('../lessons/48-sdf-fractal.js'),
   },
+  {
+    id: '49',
+    title: 'Mandelbulb — 3D 프랙탈',
+    desc: '구면좌표 z→zⁿ+c 확장, Distance Estimator, 파워 애니메이션, 트위스트 결합',
+    fileKey: '49-mandelbulb',
+    file: () => import('../lessons/49-mandelbulb.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

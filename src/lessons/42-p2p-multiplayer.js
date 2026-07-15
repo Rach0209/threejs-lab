@@ -452,9 +452,9 @@ export function init(renderer) {
     const pingAction = lobbyRoom.makeAction('ping');
     _sendRoomInfo = (data) => roomAction.send(data);
 
-    // 새 피어가 로비에 연결되면 즉시 현재 방 정보를 1:1 전송
-    // (setInterval 대기 없이 바로 방 목록에 반영됨)
-    lobbyRoom.onPeerJoin = (peerId) => {
+    // 방 창설자일 때만 자신의 방 정보를 특정 피어에게 1:1 전송
+    // (신규 입장 시 즉시 반영, ping 수신 시 새로고침 응답에 재사용)
+    const sendMyRoomInfoTo = (peerId) => {
       if (!announceInterval || !currentRoomId) return;
       roomAction.send(
         { roomId: currentRoomId, title: currentRoomTitle,
@@ -462,6 +462,10 @@ export function init(renderer) {
         { target: peerId }
       );
     };
+
+    // 새 피어가 로비에 연결되면 즉시 현재 방 정보를 1:1 전송
+    // (setInterval 대기 없이 바로 방 목록에 반영됨)
+    lobbyRoom.onPeerJoin = sendMyRoomInfoTo;
 
     roomAction.onMessage = data => {
       roomList.set(data.roomId, { ...data, lastSeen: Date.now() });
@@ -469,14 +473,7 @@ export function init(renderer) {
     };
 
     // ping 수신 시: 방 창설자면 즉시 방 정보 응답
-    pingAction.onMessage = (_, { peerId }) => {
-      if (!announceInterval || !currentRoomId) return;
-      roomAction.send(
-        { roomId: currentRoomId, title: currentRoomTitle,
-          creatorNick: myNick, count: (gameRoom ? Object.keys(gameRoom.getPeers()).length : 0) + 1, hostId: selfId },
-        { target: peerId }
-      );
-    };
+    pingAction.onMessage = (_, { peerId }) => sendMyRoomInfoTo(peerId);
 
     // 새로고침 버튼: 전체 피어에 ping 브로드캐스트
     const refreshBtn = lobbyScreen.querySelector('#refresh-btn');

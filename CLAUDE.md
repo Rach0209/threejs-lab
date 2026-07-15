@@ -48,6 +48,7 @@ src/
     43-raymarching.js                        # Raymarching/SDF 입문 (도형6종, 불리언연산, Smooth Union)
     44-sdf-noise.js                          # SDF 절차적 텍스처 (Hash/ValueNoise/FBM, 대리석/용암/행성)
     45-sdf-animation.js                      # SDF 애니메이션 (도메인반복/Twist/Wave/Bend, 메타볼)
+    46-mandelbrot.js                         # Mandelbrot 2D 프랙탈 (탈출시간, Smooth Coloring, 커서중심 줌)
 ```
 
 ## 레슨 구조 규칙
@@ -110,3 +111,10 @@ src/
 - **`uniform int`로 씬 분기 금지** — Windows(HLSL 변환) 환경에서 `uniform int == 상수` 비교가 `X4000: use of potentially uninitialized variable` 경고와 함께 셰이더가 항상 fallback만 반환하는 버그 발생. 반드시 `uniform float` + `if (uScene < 0.5)` 형태의 float 비교 사용
 - SDF 큰값 sentinel은 `1e9` 대신 `99.0` 사용 (HLSL 큰값 처리 불안정성 회피)
 - `map()` 함수는 씬별 서브함수로 분리하고 `if/else if/else` 체인으로 분기 (초기 구현 때 이른 `return`과 다중 `if` 산발 패턴이 HLSL에서 "uninitialized variable" 경고를 유발했음 — 반드시 `float best; if(...) best=... else if(...) ... else ...; return`처럼 단일 반환 지점 사용)
+
+## 2D 프랙탈(Mandelbrot류) 커서 중심 줌 패턴 (레슨 46)
+- 셰이더 좌표 매핑: `c = uCenter + uv * (BASE_SCALE / uZoom)` — JS 쪽 팬/줌 계산도 반드시 동일한 `BASE_SCALE` 상수를 써야 함(두 값이 다르면 커서 위치와 확대 중심이 어긋남)
+- 마우스 `clientX/Y`는 CSS px, `canvas.width/height`는 device px(= CSS × devicePixelRatio, `renderer.setPixelRatio(window.devicePixelRatio)` 때문). 팬/줌 계산 시 `canvas.width / canvas.clientWidth`로 배율을 구해 CSS px → device px 변환 필수
+- `gl_FragCoord.y`는 아래가 0(bottom-up), DOM `clientY`는 위가 0(top-down) — JS에서 uv를 계산할 때 y부호를 반전해야 함(`uvy = -(py - 0.5*height)/height`)
+- 커서 중심 줌: 줌 전 커서 아래의 복소좌표(`cBefore`)를 구하고, 줌 후 `center = cBefore - uv*(BASE_SCALE/newZoom)`로 역산해 같은 지점이 커서 아래 유지되도록 함
+- float32 정밀도 한계로 10⁶배 이상 확대하면 격자 아티팩트 발생 — UI에 안내 문구로 명시(정밀도 개선하려면 double-float emulation 필요, 별도 레슨 주제)

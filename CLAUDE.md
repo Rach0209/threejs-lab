@@ -119,3 +119,13 @@ src/
 - `gl_FragCoord.y`는 아래가 0(bottom-up), DOM `clientY`는 위가 0(top-down) — JS에서 uv를 계산할 때 y부호를 반전해야 함(`uvy = -(py - 0.5*height)/height`)
 - 커서 중심 줌: 줌 전 커서 아래의 복소좌표(`cBefore`)를 구하고, 줌 후 `center = cBefore - uv*(BASE_SCALE/newZoom)`로 역산해 같은 지점이 커서 아래 유지되도록 함
 - float32 정밀도 한계로 10⁶배 이상 확대하면 격자 아티팩트 발생 — UI에 안내 문구로 명시(정밀도 개선하려면 double-float emulation 필요, 별도 레슨 주제)
+
+## 재귀/반복 SDF(프랙탈) 레슨 필수 최적화 (레슨48~)
+- Menger Sponge, Sierpinski, Mandelbulb처럼 `map()` 내부에서 자체 반복 루프(3~15회)를 도는 SDF는, 반드시 함수 맨 앞에 값싼 바운딩 볼륨(`sdBox`/`sdSphere`) 거리를 먼저 계산하고 `if (bound > 0.02) return bound;`로 조기 반환할 것
+- 이유: raymarch 루프가 최대 80~100스텝을 도는데, 바운딩 없이 매 스텝마다 전체 반복을 계산하면 레이가 프랙탈에서 멀리 떨어진 허공을 지날 때도 비싼 연산을 반복하게 되어 GPU가 감당 못 하고 **첫 프레임에서 조용히 멈춤** (에러 로그·context-lost 이벤트 없이 멈춰서 디버깅이 매우 어려움 — 48 최초 구현 시 실제로 겪은 문제, [[feedback_raymarching_shader]] 4번 참고)
+- Menger처럼 `d = max(box, ...)` 형태로 정의되는 SDF는 바운딩 박스 거리가 항상 안전한 하한이라 정확성 훼손 없이 적용 가능. IFS 근사(Sierpinski 등)는 넉넉한 반지름의 sdSphere로 바운딩
+
+## 자동화 브라우저로 애니메이션 검증 시 주의 (디버깅 함정)
+- Claude Browser 등 자동화 프리뷰 탭이 `document.hidden === true`(포커스 없는 백그라운드 탭) 상태면 크롬이 `requestAnimationFrame`을 강하게 스로틀링/정지시켜, 코드가 멀쩡해도 애니메이션이 "멈춘 것처럼" 보이고 씬 전환 버튼도 화면에 반영 안 되는 것처럼 보임
+- 애니메이션이 안 움직이는 것 같으면 가장 먼저 `document.hidden`을 확인. `true`면 코드 문제가 아님
+- 이 상황에서도 로직만은 검증 가능: uniform의 **초기값**을 바꿔서 새로고침 후 최초 1회 렌더(frame 0)의 픽셀만 읽으면 rAF가 멎어 있어도 셰이더 분기가 맞는지 확인할 수 있음

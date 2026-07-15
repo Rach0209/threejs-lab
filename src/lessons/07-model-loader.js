@@ -16,6 +16,11 @@
 //    - Sketchfab.com (무료 모델 다수)
 //    - Blender에서 내보내기
 //    - KhronosGroup GitHub 샘플: github.com/KhronosGroup/glTF-Sample-Models
+//
+//  🎯 실전 활용 예시:
+//    - Blender/마야로 만든 캐릭터·소품을 웹 게임에 그대로 반입
+//    - 가구/가전 쇼핑몰의 "내 방에 미리 놓아보기" 3D 뷰어
+//    - 사용자가 직접 자기 모델 파일을 업로드하는 커스터마이저
 // ══════════════════════════════════════════════════════════════
 
 import * as THREE from 'three';

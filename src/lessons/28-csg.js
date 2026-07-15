@@ -8,7 +8,7 @@
 //    - INTERSECTION: A ∩ B (겹치는 부분만 남기기)
 //    - three-bvh-csg : BVH(Bounding Volume Hierarchy) 기반 고속 CSG
 //
-//  활용 사례:
+//  🎯 실전 활용 예시:
 //    - 게임: 폭발로 지형에 구멍 뚫기
 //    - 건축 시각화: 벽에 창문/문 구멍
 //    - 3D 모델링 툴: 기본 도형 조합으로 복잡한 형태 제작

@@ -17,6 +17,11 @@
 //    - DepthTest/DepthWrite 설정 중요 — z-fighting 방지
 //    - polygonOffset으로 표면에서 살짝 띄워야 깜빡임 없음
 //    - DecalGeometry는 Three.js examples에 포함됨 (별도 설치 불필요)
+//
+//  🎯 실전 활용 예시:
+//    - FPS 게임의 총알구멍/폭발 흔적 실시간 부착
+//    - 커스텀 상품(신발·자동차) 스티커/로고 시뮬레이터
+//    - 그래피티/드로잉 앱의 3D 표면 페인팅
 // ══════════════════════════════════════════════════════════════
 
 import * as THREE from 'three';

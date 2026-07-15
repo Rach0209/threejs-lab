@@ -20,6 +20,11 @@
 //
 //  ⚠ Three.js r185 기준 GPUComputationRenderer 미포함
 //    → DataTexture + ping-pong RenderTarget으로 직접 구현
+//
+//  🎯 실전 활용 예시:
+//    - 대규모 군중/새떼(Boid) 시뮬레이션
+//    - 데이터 시각화의 수십만 개 포인트 실시간 애니메이션
+//    - 유체·연기 등 물리 기반 비주얼 이펙트
 // ══════════════════════════════════════════════════════════════
 
 import * as THREE from 'three';

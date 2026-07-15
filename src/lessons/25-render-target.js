@@ -12,7 +12,7 @@
 //    일반 렌더링: scene → GPU → 화면(canvas)
 //    FBO 렌더링: scene → GPU → 텍스처(RenderTarget) → 다른 메시의 map으로 사용
 //
-//  활용 사례:
+//  🎯 실전 활용 예시:
 //    - 보안 카메라 / CCTV 모니터 UI
 //    - 포탈 / 웜홀 (다른 공간을 들여다보는 창)
 //    - 거울 (MeshBasicMaterial.map = renderTarget.texture)

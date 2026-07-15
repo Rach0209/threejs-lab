@@ -26,6 +26,11 @@
 //    dummy.updateMatrix();               // Object3D → Matrix4 계산
 //    mesh.setMatrixAt(i, dummy.matrix);  // i번째 인스턴스에 적용
 //    mesh.instanceMatrix.needsUpdate = true; // GPU에 업로드
+//
+//  🎯 실전 활용 예시:
+//    - 게임의 숲/잔디/군중 등 수천 개 반복 오브젝트 렌더링
+//    - 도시 시뮬레이션의 건물·가로수 대량 배치
+//    - 총알/파티클 등 짧은 수명의 대량 발사체 시스템
 // ══════════════════════════════════════════════════════════════
 
 import * as THREE from 'three';

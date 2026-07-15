@@ -17,6 +17,11 @@
 //  OrthographicCamera(left, right, top, bottom, near, far):
 //    원근 왜곡 없이 평행 투영 → 전략 게임 맵, 미니맵에 적합
 //    PerspectiveCamera 와 달리 fov 대신 뷰 범위(±units)로 설정
+//
+//  🎯 실전 활용 예시:
+//    - 오픈월드/전략 게임의 미니맵 및 목표 지점 표시
+//    - 드론/차량 관제 대시보드의 위치·방위 HUD
+//    - 실내 내비게이션 앱의 평면도 미니맵
 // ══════════════════════════════════════════════════════════════
 
 import * as THREE from 'three';

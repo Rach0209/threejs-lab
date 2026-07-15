@@ -57,6 +57,7 @@ src/
 - cleanup: geometry/material/texture `.dispose()`, 이벤트 리스너 제거, `cancelAnimationFrame`
 - `THREE.Clock` 대신 `import { Timer } from 'three'` 사용 (r168+ 권장)
 - `THREE.PCFSoftShadowMap` 대신 `THREE.PCFShadowMap` 사용 (r185 deprecated)
+- `makeLabel()` 류 헬퍼로 만든 스프라이트(`CanvasTexture` + `SpriteMaterial`)는 개별 변수로 추적하기 번거로우므로, cleanup 마지막에 `scene.traverse(o => { if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } })` 같은 catch-all 순회로 일괄 해제할 것 (46레슨 감사에서 8개 레슨이 이 텍스처를 누수하고 있었음 — `material.dispose()`는 `.map` 텍스처를 자동으로 해제하지 않음). 이미 개별 dispose된 geometry/material을 다시 dispose해도 에러 없이 안전하므로 중복 호출 걱정 없이 추가 가능
 
 ## 코드 스타일
 - Vanilla JS (TypeScript 미사용)

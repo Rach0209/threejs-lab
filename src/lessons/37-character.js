@@ -42,7 +42,7 @@ export function init(renderer) {
   sun.shadow.camera.right = sun.shadow.camera.top = 40;
   scene.add(sun);
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type    = THREE.PCFShadowMap;
 
   // ─── 지형 ──────────────────────────────────────────────────
   const floorGeo = new THREE.PlaneGeometry(80, 80, 1, 1);

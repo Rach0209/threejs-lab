@@ -302,6 +302,11 @@ export function init(renderer) {
       skeleton.dispose();
     });
     floorGeo.dispose(); floorMat.dispose();
+    // 라벨 스프라이트(makeLabel)의 CanvasTexture는 개별 추적하지 않으므로
+    // 씬을 순회하며 마지막에 일괄 해제 (이미 dispose된 자원은 재호출해도 안전)
+    scene.traverse(o => {
+      if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); }
+    });
     while (scene.children.length > 0) scene.remove(scene.children[0]);
   };
 }

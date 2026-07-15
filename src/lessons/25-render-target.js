@@ -463,8 +463,12 @@ export function init(renderer) {
      markerGeo, markerMat,
      portalFloor.geometry, portalFloorMat].forEach(o => o?.dispose?.());
 
-    mainScene.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
-    portalScene.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+    const disposeObj = o => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); }
+    };
+    mainScene.traverse(disposeObj);
+    portalScene.traverse(disposeObj);
   };
 }
 

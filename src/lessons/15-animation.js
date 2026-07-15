@@ -507,7 +507,12 @@ export function init(renderer) {
     [bodyMat, headMat, limbMat, eyeMat, jointMat, morphMat, floorMat].forEach(m => m.dispose());
     morphGeo.dispose();
     floorGeo.dispose();
-    scene.traverse(obj => { if (obj.geometry) obj.geometry.dispose(); });
+    // labelSprite의 CanvasTexture는 개별 추적하지 않으므로 함께 순회 해제
+    // (이미 dispose된 geometry/material은 재호출해도 안전)
+    scene.traverse(obj => {
+      if (obj.geometry) obj.geometry.dispose();
+      if (obj.material) { if (obj.material.map) obj.material.map.dispose(); obj.material.dispose(); }
+    });
     while (scene.children.length > 0) scene.remove(scene.children[0]);
   };
 }

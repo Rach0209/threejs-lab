@@ -344,6 +344,12 @@ export function init(renderer) {
     barMeshes.forEach(({ mat }) => mat.dispose());
     waveGeo.dispose(); waveMat.dispose();
     floorGeo.dispose(); floorMat.dispose();
+    // labelSprite 등 개별 추적하지 않은 geometry/material/텍스처를
+    // 씬을 순회하며 마지막에 일괄 해제 (이미 dispose된 자원은 재호출해도 안전)
+    scene.traverse(o => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); }
+    });
     while (scene.children.length > 0) scene.remove(scene.children[0]);
   };
 }

@@ -271,6 +271,12 @@ export function init(renderer) {
     controls.dispose();
     document.body.removeChild(ui);
     [floorGeo, floorMat].forEach(o => o.dispose());
+    // 나무마다 개별 생성되는 스프라이트 텍스처(spriteTex)는 개별 추적하지 않으므로
+    // 씬을 순회하며 마지막에 일괄 해제 (이미 dispose된 자원은 재호출해도 안전)
+    scene.traverse(o => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); }
+    });
     while (scene.children.length > 0) scene.remove(scene.children[0]);
   };
 }

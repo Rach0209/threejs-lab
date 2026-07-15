@@ -335,6 +335,13 @@ export const LESSONS = [
     fileKey: '47-voronoi',
     file: () => import('../lessons/47-voronoi.js'),
   },
+  {
+    id: '48',
+    title: 'SDF 프랙탈',
+    desc: 'Menger Sponge 재귀 파내기, Sierpinski IFS 폴딩, 트위스트 프랙탈',
+    fileKey: '48-sdf-fractal',
+    file: () => import('../lessons/48-sdf-fractal.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

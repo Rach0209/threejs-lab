@@ -262,6 +262,9 @@ export function init(renderer) {
 
   // ══════════════════════════════════════════════════════════
   //  DOM: 닉네임 화면
+  //  진입 시 최초 1회 표시되는 풀스크린 오버레이. 좌측 nav 패널이
+  //  z-index:700이라 항상 위에 뜨므로, 오른쪽에 var(--panel-left)만큼
+  //  띄워서 가려지지 않게 함 (inset:0 금지 — CLAUDE.md 참고)
   // ══════════════════════════════════════════════════════════
   const nickScreen = document.createElement('div');
   nickScreen.style.cssText = `
@@ -271,6 +274,7 @@ export function init(renderer) {
     gap:18px;z-index:600;font-family:"Courier New",monospace;
     transition:left .25s ease;
   `;
+  // 레이아웃: 로고 → 부제 → 구분선 → 안내문구 → 닉네임 입력창 → 입장 버튼
   nickScreen.innerHTML = `
     <div style="color:#e2e8f0;font-size:26px;font-weight:bold;letter-spacing:2px;">🌐 P2P 멀티플레이어</div>
     <div style="color:#475569;font-size:12px;">Trystero — BitTorrent DHT 기반 노서버 P2P</div>
@@ -289,6 +293,9 @@ export function init(renderer) {
 
   // ══════════════════════════════════════════════════════════
   //  DOM: 로비 화면
+  //  닉네임 확정 후 표시. 왼쪽 "방 목록" 패널 + 오른쪽 "방 만들기" 패널의
+  //  2열 레이아웃. 방 목록의 실제 데이터(roomList)는 renderRoomList()가
+  //  #room-list-el 안에 매번 다시 그려 넣음 (아래쪽 "방 목록 렌더링" 참고)
   // ══════════════════════════════════════════════════════════
   const lobbyScreen = document.createElement('div');
   lobbyScreen.style.cssText = `
@@ -299,6 +306,7 @@ export function init(renderer) {
     transition:left .25s ease;
   `;
   lobbyScreen.innerHTML = `
+    <!-- 상단 바: 나가기(홈) 버튼 + 내 닉네임 표시 -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
       <div style="display:flex;align-items:center;gap:14px;">
         <button id="lobby-home-btn"
@@ -314,6 +322,7 @@ export function init(renderer) {
       <div style="color:#475569;font-size:11px;">Trystero P2P · 노서버</div>
     </div>
     <div style="display:flex;gap:20px;flex:1;min-height:0;">
+      <!-- 왼쪽: 방 목록 (roomAction 브로드캐스트로 채워지는 실시간 목록) -->
       <div style="flex:1;background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:20px;
                   display:flex;flex-direction:column;overflow:hidden;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
@@ -329,6 +338,7 @@ export function init(renderer) {
           아직 방이 없어요<br><br>방을 만들어 친구를 초대하세요!
         </div>
       </div>
+      <!-- 오른쪽: 방 만들기 폼 -->
       <div style="width:240px;background:#0f172a;border:1px solid #1e293b;border-radius:12px;
                   padding:20px;display:flex;flex-direction:column;gap:12px;">
         <div style="color:#94a3b8;font-size:12px;font-weight:bold;">방 만들기</div>
@@ -351,10 +361,14 @@ export function init(renderer) {
 
   // ══════════════════════════════════════════════════════════
   //  DOM: 게임 HUD
+  //  4개 코너에 떠 있는 오버레이. 바깥 래퍼는 inset:0 + pointer-events:none
+  //  (클릭이 아래 3D 씬으로 그대로 통과하도록) 이고, 클릭이 필요한 자식
+  //  요소(로비 버튼, 채팅창)만 개별적으로 pointer-events:auto로 되살림
   // ══════════════════════════════════════════════════════════
   const hud = document.createElement('div');
   hud.style.cssText = 'position:fixed;inset:0;pointer-events:none;font-family:"Courier New",monospace;display:none;';
   hud.innerHTML = `
+    <!-- 좌상단: 방 제목 + 조작키 안내 + 접속 인원 -->
     <div style="position:absolute;left:var(--panel-left,280px);top:16px;transition:left .25s ease;
       background:rgba(0,0,0,.75);border:1px solid #334155;border-radius:8px;
       padding:12px 16px;color:#94a3b8;font-size:12px;line-height:2;">
@@ -365,6 +379,7 @@ export function init(renderer) {
       <span style="color:#e2e8f0">Enter</span> — 채팅<br>
       접속 중: <span id="hud-count" style="color:#34d399;">1</span>명
     </div>
+    <!-- 좌하단: 내 닉네임 + FSM 상태 + 로비로 나가기 버튼 -->
     <div style="position:absolute;left:var(--panel-left,280px);bottom:20px;transition:left .25s ease;
       background:rgba(0,0,0,.75);border:1px solid #334155;border-radius:8px;
       padding:12px 16px;color:#94a3b8;font-size:13px;line-height:1.9;pointer-events:auto;">
@@ -376,6 +391,7 @@ export function init(renderer) {
         ← 로비로
       </button>
     </div>
+    <!-- 우상단: 초당 송/수신 메시지 수 (P2P 트래픽 시각화) -->
     <div style="position:absolute;right:20px;top:16px;
       background:rgba(0,0,0,.75);border:1px solid #334155;border-radius:8px;
       padding:12px 16px;color:#94a3b8;font-size:13px;line-height:1.9;">
@@ -383,6 +399,7 @@ export function init(renderer) {
       TX <span id="hud-tx" style="color:#6366f1;">0</span> msg/s<br>
       RX <span id="hud-rx" style="color:#10b981;">0</span> msg/s
     </div>
+    <!-- 하단 중앙: 채팅 로그 (#hud-chat에 sendChat/수신 시 메시지 append) -->
     <div style="position:absolute;left:50%;transform:translateX(-50%);bottom:20px;
       background:rgba(0,0,0,.78);border:1px solid #334155;border-radius:8px;
       padding:10px 14px;width:clamp(300px,30vw,560px);pointer-events:auto;">
@@ -395,6 +412,9 @@ export function init(renderer) {
   `;
   document.body.appendChild(hud);
 
+  // 채팅 입력창은 hud의 innerHTML 안이 아니라 별도 <input> 엘리먼트로 생성.
+  // 실제 키보드 포커스·한글 IME 조합(isComposing) 처리가 필요해서
+  // innerHTML 문자열로는 만들 수 없고, DOM API로 직접 생성해야 함
   let chatOpen = false;
   const chatInput = document.createElement('input');
   chatInput.type = 'text'; chatInput.maxLength = 40;

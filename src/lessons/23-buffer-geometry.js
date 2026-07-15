@@ -177,7 +177,6 @@ export function init(renderer) {
   const dirLight = new THREE.DirectionalLight(0xffffff, 3);
   dirLight.position.set(5, 8, 5);
   scene.add(dirLight);
-  scene.add(new THREE.DirectionalLight(0x4466ff, 1.5).position.set(-5, 3, -3) && dirLight);
   const fillLight = new THREE.DirectionalLight(0x4466ff, 1.5);
   fillLight.position.set(-5, 3, -3);
   scene.add(fillLight);

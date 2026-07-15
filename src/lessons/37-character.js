@@ -214,23 +214,32 @@ export function init(renderer) {
     // 지면 충돌 (기본 바닥 y=0)
     groundY = 0;
 
-    // 플랫폼 충돌
+    // 플랫폼 충돌 — AABB(min/max)와 캐릭터의 xz 위치가 겹치는 플랫폼만 검사
     const px = charGroup.position.x;
     const pz = charGroup.position.z;
     platforms.forEach(({ mesh, min, max }) => {
       if (px > min.x && px < max.x && pz > min.z && pz < max.z) {
         const top = max.y;
+        // "이 플랫폼 위에 서 있다"로 인정하는 y범위:
+        //   상한 top+0.05  → 살짝 파고든 상태도 허용(부동소수점 오차로 매 프레임
+        //                     경계값을 딱 스치면서 착지 판정이 깜빡이는 것 방지)
+        //   하한 top-0.5   → 플랫폼 옆면에 붙어 아래로 떨어지는 중(=아직 위가
+        //                     아님)인 경우까지 "위"로 잘못 인정하지 않도록 제한
         if (charGroup.position.y <= top + 0.05 && charGroup.position.y >= top - 0.5) {
-          groundY = Math.max(groundY, top);
+          groundY = Math.max(groundY, top);  // 여러 플랫폼이 겹치면 가장 높은 바닥 채택
         }
       }
     });
 
     if (charGroup.position.y <= groundY) {
+      // 바닥/플랫폼을 뚫고 내려갔다 → 표면 높이로 스냅하고 낙하 속도 제거
       charGroup.position.y = groundY;
       velocity.y = 0;
       onGround = true;
     } else {
+      // 뚫지는 않았지만 표면에서 0.05 이내로 붙어 있으면 "접지"로 간주
+      // (점프 직후 한 프레임 동안 y가 groundY보다 살짝 위인 상태를
+      //  공중으로 오판해 애니메이션이 튀는 것을 막기 위한 여유값)
       onGround = charGroup.position.y <= groundY + 0.05;
     }
 

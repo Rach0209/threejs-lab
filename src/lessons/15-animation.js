@@ -53,7 +53,6 @@ export function init(renderer) {
   keyLight.shadow.mapSize.set(1024, 1024);
   scene.add(keyLight);
 
-  scene.add(new THREE.DirectionalLight(0x4466aa, 1.5).position.set(-4, 3, -2) && keyLight);
   const fillLight = new THREE.DirectionalLight(0x4466aa, 1.5);
   fillLight.position.set(-4, 3, -2);
   scene.add(fillLight);

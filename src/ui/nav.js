@@ -328,6 +328,13 @@ export const LESSONS = [
     fileKey: '46-mandelbrot',
     file: () => import('../lessons/46-mandelbrot.js'),
   },
+  {
+    id: '47',
+    title: 'Voronoi — 셀룰러 노이즈',
+    desc: 'F1/F2 거리 기반 셀 분할, 균열 텍스처, 애니메이션 세포',
+    fileKey: '47-voronoi',
+    file: () => import('../lessons/47-voronoi.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

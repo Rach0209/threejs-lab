@@ -349,6 +349,13 @@ export const LESSONS = [
     fileKey: '49-mandelbulb',
     file: () => import('../lessons/49-mandelbulb.js'),
   },
+  {
+    id: '50',
+    title: '고급 물리 — 캐릭터 컨트롤러 충돌',
+    desc: 'cannon-es DYNAMIC 캡슐 콜라이더, 벽/나무 충돌·슬라이딩, Raycast 지면 감지',
+    fileKey: '50-physics-character',
+    file: () => import('../lessons/50-physics-character.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

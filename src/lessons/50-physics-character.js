@@ -65,7 +65,12 @@ export function init(renderer) {
   //  물리 세계
   // ══════════════════════════════════════════════════════════
   const world = new CANNON.World({ gravity: new CANNON.Vec3(0, -20, 0) });
-  world.broadphase = new CANNON.SAPBroadphase(world);
+  // ⚠ SAPBroadphase는 정적 장애물이 여러 개(특히 회전된 Box) 섞인 씬에서
+  // 일부 충돌 쌍을 누락시켜 캐릭터가 벽을 그냥 통과해버리는 버그가 실제로
+  // 발생했다(직접 world.step()을 반복 호출해 재현·확인함). 바디 수가 적은
+  // (수십 개 이하) 씬에서는 NaiveBroadphase(모든 쌍을 전수 검사)가 더 느리지
+  // 않으면서 훨씬 안정적이다 — "최적화보다 정확성"을 먼저 챙길 것
+  world.broadphase = new CANNON.NaiveBroadphase();
   world.allowSleep = false; // 캐릭터는 계속 조작되므로 sleep 방지
 
   const groundMat = new CANNON.Material('ground');
@@ -94,8 +99,17 @@ export function init(renderer) {
   floor.receiveShadow = true;
   scene.add(floor);
 
-  const floorBody = new CANNON.Body({ mass: 0, material: groundMat, shape: new CANNON.Plane() });
-  floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+  // ⚠ CANNON.Plane()(수학적으로 무한한 평면)은 레이캐스트 좌표에 아주 미세한
+  // (예: 1e-17 수준) 부동소수점 오차가 섞이면 AABB 겹침 판정을 놓쳐서 레이가
+  // 항상 빗나가는 정밀도 버그가 있었다(직접 재현·확인함). 캐릭터가 바닥에
+  // 안착한 뒤 y가 정확히 0이 아니라 -0.00004 같은 미세한 값으로 떠는 건
+  // 물리 엔진에서 지극히 정상인데, 그 상태에서 접지 판정이 항상 실패해버림.
+  // 화면상 바닥도 60×60 유한 크기이니 얇은 Box로 바꾸면 버그도 피하고 더 정확함
+  const floorBody = new CANNON.Body({
+    mass: 0, material: groundMat,
+    shape: new CANNON.Box(new CANNON.Vec3(30, 0.1, 30)),
+  });
+  floorBody.position.set(0, -0.1, 0);
   world.addBody(floorBody);
 
   // ─── 벽 / 나무 장애물 (충돌 콜라이더 포함) ───────────────

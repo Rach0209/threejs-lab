@@ -77,18 +77,19 @@ export function init(renderer) {
   const wallMat   = new CANNON.Material('wall');
   const charMat   = new CANNON.Material('character');
 
-  // 캐릭터-바닥/벽 모두 마찰을 거의 0으로 둔다.
-  // ⚠ 이동을 마찰이 아니라 velocity 직접 지정으로 제어하기 때문에,
-  // 바닥 마찰을 높게 주면(예: 0.3) 접촉 솔버가 "미끄러짐을 막으려고"
-  // 매 프레임 내가 지정한 속도를 도로 깎아먹어서 캐릭터가 뻑뻑하게
-  // 움직이거나 거의 안 움직이는 것처럼 느껴진다. 정지는 아래
-  // 애니메이션 루프의 수동 감쇠(velocity *= 0.85)가 담당하므로
-  // 마찰이 그 역할을 대신할 필요가 없다.
+  // 캐릭터-바닥/벽 마찰은 반드시 정확히 0으로 둔다 (0.01처럼 "거의 0"도 안 됨!).
+  // ⚠ 이동을 마찰이 아니라 velocity 직접 지정으로 제어하기 때문에, 벽 쪽으로
+  // 방향키를 누른 채 점프하면 솔버가 "벽을 뚫지 않으려고" 매 프레임 큰 법선력을
+  // 걸게 되고, 그 법선력 × 마찰계수(친구값)가 벽면의 수직(Y) 접선 방향으로도
+  // 작용해서 중력을 완전히 상쇄해버린다 — 벽에 붙은 채 점프하면 안 떨어지고
+  // 공중에 붕 뜬 채로 고정되는 버그로 실제 재현됨 (0.01에서도 발생, 0에서만 해결).
+  // 정지는 아래 애니메이션 루프의 수동 감쇠(velocity *= 0.85)가 담당하므로
+  // 마찰이 그 역할을 대신할 필요가 애초에 없다.
   world.addContactMaterial(new CANNON.ContactMaterial(charMat, groundMat, {
-    friction: 0.01, restitution: 0,
+    friction: 0, restitution: 0,
   }));
   world.addContactMaterial(new CANNON.ContactMaterial(charMat, wallMat, {
-    friction: 0.01, restitution: 0,
+    friction: 0, restitution: 0,
   }));
 
   // ─── 바닥 ────────────────────────────────────────────────

@@ -36,6 +36,11 @@ const CAM_OFFSET  = new THREE.Vector3(0, 4, 8);
 const CHAR_RADIUS = 0.35;
 const CHAR_HEIGHT = 0.7; // 원기둥 부분 높이 (양 끝 반구 별도)
 
+// 지면 감지 레이캐스트가 캐릭터 자기 자신의 콜라이더에 맞지 않도록
+// 충돌 그룹을 분리 (지형/장애물 = GROUP_WORLD, 캐릭터 = GROUP_CHAR)
+const GROUP_WORLD = 1;
+const GROUP_CHAR  = 2;
+
 export function init(renderer) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x87ceeb);
@@ -67,14 +72,18 @@ export function init(renderer) {
   const wallMat   = new CANNON.Material('wall');
   const charMat   = new CANNON.Material('character');
 
-  // 캐릭터-바닥: 어느 정도 마찰이 있어야 정지 시 미끄러지지 않음
+  // 캐릭터-바닥/벽 모두 마찰을 거의 0으로 둔다.
+  // ⚠ 이동을 마찰이 아니라 velocity 직접 지정으로 제어하기 때문에,
+  // 바닥 마찰을 높게 주면(예: 0.3) 접촉 솔버가 "미끄러짐을 막으려고"
+  // 매 프레임 내가 지정한 속도를 도로 깎아먹어서 캐릭터가 뻑뻑하게
+  // 움직이거나 거의 안 움직이는 것처럼 느껴진다. 정지는 아래
+  // 애니메이션 루프의 수동 감쇠(velocity *= 0.85)가 담당하므로
+  // 마찰이 그 역할을 대신할 필요가 없다.
   world.addContactMaterial(new CANNON.ContactMaterial(charMat, groundMat, {
-    friction: 0.3, restitution: 0,
+    friction: 0.01, restitution: 0,
   }));
-  // 캐릭터-벽: 마찰을 낮게 → 벽에 "쩍 붙지" 않고 미끄러지듯 슬라이딩
-  // (마찰이 높으면 벽에 비스듬히 부딪혔을 때 뚝 멈춰버려 부자연스러움)
   world.addContactMaterial(new CANNON.ContactMaterial(charMat, wallMat, {
-    friction: 0.02, restitution: 0,
+    friction: 0.01, restitution: 0,
   }));
 
   // ─── 바닥 ────────────────────────────────────────────────
@@ -192,6 +201,9 @@ export function init(renderer) {
     linearDamping: 0.1,
     fixedRotation: true,  // ⚠ 핵심: 회전을 고정해 캐릭터가 넘어지지 않게 함
     angularDamping: 1.0,  // fixedRotation과 함께 회전 관성도 완전히 죽임
+    collisionFilterGroup: GROUP_CHAR,
+    // mask는 기본값(-1=전체)을 유지 → 지형/벽과의 실제 물리 충돌은 그대로 발생.
+    // 그룹만 분리해서 "레이캐스트가 나 자신을 맞히는" 것만 걸러낸다
   });
   charBody.addShape(
     new CANNON.Cylinder(CHAR_RADIUS, CHAR_RADIUS, CHAR_HEIGHT, 8),
@@ -207,16 +219,22 @@ export function init(renderer) {
   let onGround = false;
   let camYaw = 0;
 
-  // 지면 감지용 광선 (매 프레임 캐릭터 발밑으로 쏨)
+  // 지면 감지용 광선 — charBody.position은 캡슐 맨 아래(발끝) 기준점이라
+  // 여기서 바로 아래로 쏘면 레이 시작점이 지면과 거의 겹쳐서(부동소수점
+  // 오차로) 맞았다/안맞았다가 프레임마다 뒤집히는 깜빡임이 생긴다.
+  // → 발끝보다 확실히 위(캡슐 중간 높이)에서 시작해서 발끝 살짝 아래까지 쏜다
+  const GROUND_RAY_TOP = CHAR_RADIUS + CHAR_HEIGHT / 2; // 캡슐 중간 높이
   const rayFrom = new CANNON.Vec3();
   const rayTo   = new CANNON.Vec3();
   const rayResult = new CANNON.RaycastResult();
 
   function checkGround() {
-    rayFrom.copy(charBody.position);
-    rayTo.set(charBody.position.x, charBody.position.y - (CHAR_RADIUS + 0.15), charBody.position.z);
+    rayFrom.set(charBody.position.x, charBody.position.y + GROUND_RAY_TOP, charBody.position.z);
+    rayTo.set(charBody.position.x, charBody.position.y - 0.05, charBody.position.z);
     rayResult.reset();
-    world.raycastClosest(rayFrom, rayTo, {}, rayResult);
+    // collisionFilterMask: GROUP_WORLD → 캐릭터 자기 자신(GROUP_CHAR)은 제외하고
+    // 지형/벽만 검사 (레이 시작점이 자기 캡슐 내부에 있어도 자기 자신에 안 맞음)
+    world.raycastClosest(rayFrom, rayTo, { collisionFilterMask: GROUP_WORLD }, rayResult);
     return rayResult.hasHit;
   }
 

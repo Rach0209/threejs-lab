@@ -19,11 +19,17 @@
 //    - velocity 직접 제어    : 힘(force) 대신 속도(velocity)를 매 프레임 지정해
 //                              WASD 조작감을 즉각적으로 만드는 실전 기법
 //    - ContactMaterial 튜닝  : 마찰을 낮춰야 벽에 "쩍 붙지" 않고 매끄럽게 슬라이딩
+//    - KINEMATIC 이동 플랫폼 : 물리 힘을 안 받고 좌표만 직접 옮기는 바디.
+//                              캐릭터를 "태우려면" 플랫폼의 프레임간 이동량을
+//                              캐릭터 위치에 그대로 더해주는 수동 패런팅이 필요함
+//                              (마찰로 태우려 하면 레슨50에서 겪은 마찰 버그 재발)
+//    - 목표 지점 판정        : 물리 트리거 볼륨 없이 매 프레임 거리 비교로 충분
 //
 //  🎯 실전 활용 예시:
 //    - 웹 기반 3D 어드벤처/액션 게임의 진짜 게임형 캐릭터 이동
 //    - 건축 워크스루에서 가구·벽에 자연스럽게 막히는 아바타
 //    - VR/체험형 콘텐츠의 물리 기반 충돌 캐릭터
+//    - 플랫포머 게임의 움직이는 발판·엘리베이터, 체크포인트 도달 이벤트
 // ══════════════════════════════════════════════════════════════
 
 import * as THREE from 'three';
@@ -184,6 +190,64 @@ export function init(renderer) {
   [[8, -10], [10, -7], [-9, 6], [-11, 9], [-8, -12], [12, 8]].forEach(([x, z]) => addTree(x, z));
 
   // ══════════════════════════════════════════════════════════
+  //  움직이는 발판 (KINEMATIC) — Z축으로 왕복
+  // ══════════════════════════════════════════════════════════
+  //  KINEMATIC Body: 중력·충돌력의 영향을 받지 않고 좌표를 코드로 직접
+  //  지정하는 바디. mass=0인 STATIC과 달리 "움직이는 정적 오브젝트"에 쓴다.
+  const PLATFORM_X = 17;
+  const PLATFORM_Z_AMP = 6;   // 왕복 폭
+  const PLATFORM_Y = 0.6;     // 발판 윗면 높이
+
+  const platGeo = new THREE.BoxGeometry(3.6, 0.3, 3.6);
+  const platMat = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.5 });
+  const platMesh = new THREE.Mesh(platGeo, platMat);
+  platMesh.castShadow = platMesh.receiveShadow = true;
+  scene.add(platMesh);
+
+  const platformBody = new CANNON.Body({
+    mass: 0,
+    type: CANNON.Body.KINEMATIC,
+    material: wallMat,
+    shape: new CANNON.Box(new CANNON.Vec3(1.8, 0.15, 1.8)),
+  });
+  // ⚠ X좌표는 왕복 중 절대 안 바뀌지만, 생성 시 명시적으로 지정해두지 않으면
+  // Body 기본 위치인 원점(0,0,0)에 남아있는다 — 아래 애니메이션 루프에서
+  // z/y만 매 프레임 갱신하고 x는 손대지 않으므로, 여기서 미리 세팅 필수
+  platformBody.position.x = PLATFORM_X;
+  world.addBody(platformBody);
+
+  // ─── 목표 지점 — 발판 왕복 범위 바로 너머, 발판을 타고 건너가야 닿기 좋은 위치 ───
+  const GOAL_POS = { x: PLATFORM_X, z: PLATFORM_Z_AMP + 3 };
+
+  const goalPadGeo = new THREE.BoxGeometry(3, 0.3, 3);
+  const goalPadMat = new THREE.MeshStandardMaterial({ color: 0x8b7355, roughness: 0.8 });
+  const goalPadMesh = new THREE.Mesh(goalPadGeo, goalPadMat);
+  goalPadMesh.position.set(GOAL_POS.x, PLATFORM_Y - 0.15, GOAL_POS.z);
+  goalPadMesh.castShadow = goalPadMesh.receiveShadow = true;
+  scene.add(goalPadMesh);
+
+  const goalPadBody = new CANNON.Body({
+    mass: 0, material: wallMat,
+    shape: new CANNON.Box(new CANNON.Vec3(1.5, 0.15, 1.5)),
+  });
+  goalPadBody.position.set(GOAL_POS.x, PLATFORM_Y - 0.15, GOAL_POS.z);
+  world.addBody(goalPadBody);
+
+  // 목표 마커 — 순수 장식(충돌 없음), 천천히 회전 + 위아래로 둥실거림
+  const goalMarkerGeo = new THREE.TorusGeometry(0.7, 0.12, 12, 24);
+  const goalMarkerMat = new THREE.MeshStandardMaterial({
+    color: 0xfacc15, emissive: 0x7a5c00, roughness: 0.3,
+  });
+  const goalMarker = new THREE.Mesh(goalMarkerGeo, goalMarkerMat);
+  goalMarker.position.set(GOAL_POS.x, PLATFORM_Y + 1.0, GOAL_POS.z);
+  goalMarker.rotation.x = Math.PI / 2;
+  scene.add(goalMarker);
+
+  colliders.push({ mesh: platMesh, geo: platGeo, mat: platMat, body: platformBody });
+  colliders.push({ mesh: goalPadMesh, geo: goalPadGeo, mat: goalPadMat, body: goalPadBody });
+  colliders.push({ mesh: goalMarker, geo: goalMarkerGeo, mat: goalMarkerMat, body: null });
+
+  // ══════════════════════════════════════════════════════════
   //  캐릭터 — DYNAMIC Body + 진짜 캡슐(Cylinder+Sphere×2) 콜라이더
   // ══════════════════════════════════════════════════════════
   const charGroup = new THREE.Group();
@@ -233,6 +297,9 @@ export function init(renderer) {
   const keys = {};
   let onGround = false;
   let camYaw = 0;
+  let goalReached = false;
+  // 발판을 타고 있는 동안 프레임간 이동량을 캐릭터에 그대로 더해주기 위한 추적값
+  let platformPrevPos = { x: platformBody.position.x, z: platformBody.position.z };
 
   // 지면 감지용 광선 — charBody.position은 캡슐 맨 아래(발끝) 기준점이라
   // 여기서 바로 아래로 쏘면 레이 시작점이 지면과 거의 겹쳐서(부동소수점
@@ -243,6 +310,8 @@ export function init(renderer) {
   const rayTo   = new CANNON.Vec3();
   const rayResult = new CANNON.RaycastResult();
 
+  // 접지 여부뿐 아니라 "무엇을 밟고 있는지"(body)도 반환 — 이동 발판 위에
+  // 서 있는지 판별해서 캐릭터를 발판에 태우는 데 사용
   function checkGround() {
     rayFrom.set(charBody.position.x, charBody.position.y + GROUND_RAY_TOP, charBody.position.z);
     rayTo.set(charBody.position.x, charBody.position.y - 0.05, charBody.position.z);
@@ -250,7 +319,7 @@ export function init(renderer) {
     // collisionFilterMask: GROUP_WORLD → 캐릭터 자기 자신(GROUP_CHAR)은 제외하고
     // 지형/벽만 검사 (레이 시작점이 자기 캡슐 내부에 있어도 자기 자신에 안 맞음)
     world.raycastClosest(rayFrom, rayTo, { collisionFilterMask: GROUP_WORLD }, rayResult);
-    return rayResult.hasHit;
+    return rayResult.hasHit ? rayResult.body : null;
   }
 
   // ─── 입력 ──────────────────────────────────────────────────
@@ -293,7 +362,8 @@ export function init(renderer) {
     </div>
     <div style="color:#475569;font-size:11px;line-height:1.6;margin-bottom:8px;">
       벽/나무에 비스듬히 부딪혀보세요 — 뚫지 않고<br>
-      표면을 따라 자연스럽게 미끄러집니다 (37번과 비교!)
+      표면을 따라 자연스럽게 미끄러집니다 (37번과 비교!)<br>
+      🔵 파란 발판을 타고 노란 고리(목표)까지 가보세요.
     </div>
     <p style="color:#94a3b8;font-size:12px;line-height:1.9;">
       <span style="color:#e2e8f0">WASD</span> — 이동 &nbsp;
@@ -302,7 +372,8 @@ export function init(renderer) {
     </p>
     <div style="height:1px;background:#1e293b;margin:8px 0;"></div>
     <p style="color:#64748b;font-size:11px;">
-      상태: <span id="pc-state" style="color:#fbbf24">공중</span>
+      상태: <span id="pc-state" style="color:#fbbf24">공중</span><br>
+      목표: <span id="pc-goal" style="color:#64748b">미도달</span>
     </p>
   `;
   document.body.appendChild(ui);
@@ -322,7 +393,22 @@ export function init(renderer) {
     const delta = Math.min(timer.getDelta(), 0.05);
     const t = timer.getElapsed();
 
-    onGround = checkGround();
+    // 이동 발판: 사인파로 Z축 왕복. KINEMATIC이라 물리 힘이 아니라
+    // position을 직접 지정 — 접지 판정·world.step() 전에 이번 프레임
+    // 목표 위치로 먼저 옮겨둔다.
+    // ⚠ position을 직접 대입하는 것만으로는 부족하다 — cannon-es는 매 스텝
+    // DYNAMIC 바디의 AABB(경계상자)만 자동 갱신하고, 코드로 직접 옮기는
+    // KINEMATIC 바디는 갱신하지 않는다. aabbNeedsUpdate를 수동으로 켜주지
+    // 않으면 발판이 실제로는 움직였는데도 레이캐스트/충돌 판정은 예전
+    // 위치에 머물러 있는 상태가 되어 캐릭터가 발판을 그냥 통과해버린다
+    // (직접 재현·확인함).
+    platformBody.position.z = Math.sin(t * 0.4) * PLATFORM_Z_AMP;
+    platformBody.position.y = PLATFORM_Y - 0.15;
+    platformBody.aabbNeedsUpdate = true;
+    platMesh.position.copy(platformBody.position);
+
+    const groundBody = checkGround();
+    onGround = !!groundBody;
 
     // 이동 방향 (카메라 yaw 기준) — 레슨37과 동일한 방식
     _forward.set(Math.sin(camYaw), 0, Math.cos(camYaw));
@@ -351,8 +437,25 @@ export function init(renderer) {
 
     world.step(1 / 60, delta, 3);
 
+    // 발판에 타고 있으면 발판이 이번 프레임에 이동한 만큼을 캐릭터에도
+    // 그대로 더해준다 ("패런팅" 방식). 마찰로 태우려 하면 이 레슨에서
+    // 이미 겪은 마찰 버그(friction=0 강제)와 충돌하므로 쓸 수 없다.
+    if (groundBody === platformBody) {
+      charBody.position.x += platformBody.position.x - platformPrevPos.x;
+      charBody.position.z += platformBody.position.z - platformPrevPos.z;
+    }
+    platformPrevPos.x = platformBody.position.x;
+    platformPrevPos.z = platformBody.position.z;
+
     // 물리 결과 → Three.js 동기화 (fixedRotation이라 회전은 복사 안 함)
     charGroup.position.copy(charBody.position);
+
+    // 목표 지점 도달 판정 — 물리 트리거 볼륨 없이 매 프레임 거리 비교로 충분
+    const dx = charBody.position.x - GOAL_POS.x;
+    const dz = charBody.position.z - GOAL_POS.z;
+    goalReached = (dx * dx + dz * dz) < 2.0 * 2.0;
+    goalMarker.rotation.z = t * 1.2;
+    goalMarker.position.y = PLATFORM_Y + 1.0 + Math.sin(t * 2) * 0.15;
 
     // 걷는 느낌
     if (_move.lengthSq() > 0 && onGround) {
@@ -376,6 +479,9 @@ export function init(renderer) {
     camera.lookAt(camTarget);
 
     document.getElementById('pc-state').textContent = onGround ? '지상' : '공중';
+    const goalEl = document.getElementById('pc-goal');
+    goalEl.textContent = goalReached ? '🎉 도달!' : '미도달';
+    goalEl.style.color = goalReached ? '#34d399' : '#64748b';
 
     renderer.render(scene, camera);
   }

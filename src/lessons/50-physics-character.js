@@ -24,6 +24,10 @@
 //                              캐릭터 위치에 그대로 더해주는 수동 패런팅이 필요함
 //                              (마찰로 태우려 하면 레슨50에서 겪은 마찰 버그 재발)
 //    - 목표 지점 판정        : 물리 트리거 볼륨 없이 매 프레임 거리 비교로 충분
+//    - AABB 수동 갱신        : STATIC 바디는 position을 옮긴 뒤 반드시
+//                              updateAABB()를 호출해야 raycastClosest가 정확히
+//                              찾는다. 안 하면 물리 충돌은 멀쩡한데 접지 판정
+//                              레이만 그 바디를 계속 못 찾는 헷갈리는 버그가 남음
 //
 //  🎯 실전 활용 예시:
 //    - 웹 기반 3D 어드벤처/액션 게임의 진짜 게임형 캐릭터 이동
@@ -117,6 +121,15 @@ export function init(renderer) {
     shape: new CANNON.Box(new CANNON.Vec3(30, 0.1, 30)),
   });
   floorBody.position.set(0, -0.1, 0);
+  // ⚠ Body는 shape를 등록하는 시점(생성자 옵션으로 넘길 때)에 AABB를 한 번
+  // 계산해버리는데, 그 시점은 아직 기본 위치(원점)일 때라서 이후 position을
+  // 옮겨도 aabbNeedsUpdate가 이미 false로 남아 절대 다시 계산되지 않는다.
+  // → world-space 좌표가 필요한 모든 STATIC 바디는 position 확정 직후
+  // updateAABB()를 명시적으로 한 번 더 호출해야 한다. 이걸 놓치면 물리
+  // 충돌(world.step 안의 bounding-sphere 브로드페이즈, position을 그때그때
+  // 읽어서 문제 없음)은 멀쩡한데 raycastClosest(캐시된 AABB 기반)만 이
+  // 바디를 계속 못 찾는, 매우 헷갈리는 증상이 남 — 직접 겪고 확인함
+  floorBody.updateAABB();
   world.addBody(floorBody);
 
   // ─── 벽 / 나무 장애물 (충돌 콜라이더 포함) ───────────────
@@ -138,6 +151,7 @@ export function init(renderer) {
     });
     body.position.set(x, h / 2, z);
     body.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), rotY);
+    body.updateAABB(); // 위 floorBody 주석 참고 — 위치 확정 후 AABB 강제 재계산
     world.addBody(body);
 
     colliders.push({ mesh, geo, mat, body });
@@ -169,6 +183,7 @@ export function init(renderer) {
       shape: new CANNON.Cylinder(0.3, 0.35, 2.2, 8),
     });
     trunkBody.position.set(x, 1.1, z);
+    trunkBody.updateAABB(); // 위 floorBody 주석 참고
     world.addBody(trunkBody);
 
     colliders.push({ mesh: trunk, geo: trunkGeo, mat: trunkMat, body: trunkBody });
@@ -214,6 +229,7 @@ export function init(renderer) {
   // Body 기본 위치인 원점(0,0,0)에 남아있는다 — 아래 애니메이션 루프에서
   // z/y만 매 프레임 갱신하고 x는 손대지 않으므로, 여기서 미리 세팅 필수
   platformBody.position.x = PLATFORM_X;
+  platformBody.updateAABB(); // 위 floorBody 주석 참고 — 최초 위치도 확정 직후 강제 재계산
   world.addBody(platformBody);
 
   // ─── 목표 지점 — 발판 왕복 범위 바로 너머, 발판을 타고 건너가야 닿기 좋은 위치 ───
@@ -231,6 +247,7 @@ export function init(renderer) {
     shape: new CANNON.Box(new CANNON.Vec3(1.5, 0.15, 1.5)),
   });
   goalPadBody.position.set(GOAL_POS.x, PLATFORM_Y - 0.15, GOAL_POS.z);
+  goalPadBody.updateAABB(); // 위 floorBody 주석 참고
   world.addBody(goalPadBody);
 
   // 목표 마커 — 순수 장식(충돌 없음), 천천히 회전 + 위아래로 둥실거림

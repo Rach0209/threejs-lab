@@ -356,6 +356,13 @@ export const LESSONS = [
     fileKey: '50-physics-character',
     file: () => import('../lessons/50-physics-character.js'),
   },
+  {
+    id: '51',
+    title: '파티클 유체 시뮬레이션 (SPH)',
+    desc: '직접 구현한 SPH 알고리즘, 공간 해시 그리드 이웃탐색, 점성으로 물/꿀/기름 전환',
+    fileKey: '51-sph-fluid',
+    file: () => import('../lessons/51-sph-fluid.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

@@ -363,6 +363,13 @@ export const LESSONS = [
     fileKey: '51-sph-fluid',
     file: () => import('../lessons/51-sph-fluid.js'),
   },
+  {
+    id: '52',
+    title: '지형 홍수 시뮬레이션 (SWE)',
+    desc: '얕은 물 방정식(Virtual Pipes), 댐 붕괴·제방 쌓기, 실제 치수 엔지니어링 기법',
+    fileKey: '52-shallow-water-flood',
+    file: () => import('../lessons/52-shallow-water-flood.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)

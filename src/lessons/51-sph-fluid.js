@@ -63,6 +63,7 @@ const N = NX * NY * NZ;
 
 const VISCOSITY_PRESETS = { water: 6, honey: 45, oil: 18 };
 const VISCOSITY_LABEL   = { water: '물 💧', honey: '꿀 🍯', oil: '기름 🛢️' };
+const VISCOSITY_UI_COLOR = { water: '#93c5fd', honey: '#fdba74', oil: '#fde047' };
 
 export function init(renderer) {
   const scene = new THREE.Scene();
@@ -281,19 +282,25 @@ export function init(renderer) {
   scene.add(particleMesh);
 
   const dummy = new THREE.Object3D();
-  const colorSlow = new THREE.Color(0x1e40af); // 저속 — 짙은 파랑
-  const colorFast = new THREE.Color(0xa5f3fc); // 고속 — 밝은 시안 (물보라 느낌)
+  // 재질(점성 프리셋)마다 색 계열 자체를 바꿔서 한눈에 구분되게 함
+  // (저속→고속 그라데이션은 유지하되, 채도를 낮춰 눈이 편하도록)
+  const COLOR_PRESETS = {
+    water: { slow: new THREE.Color(0x1e3a8a), fast: new THREE.Color(0xbfdbfe) }, // 파랑 계열
+    honey: { slow: new THREE.Color(0x7c2d12), fast: new THREE.Color(0xfed7aa) }, // 주황/붉은 계열
+    oil:   { slow: new THREE.Color(0x713f12), fast: new THREE.Color(0xfef08a) }, // 노랑 계열
+  };
   const tmpColor = new THREE.Color();
   const COLOR_MAX_SPEED = 4;
 
   function syncMesh() {
+    const { slow, fast } = COLOR_PRESETS[viscosityKey];
     for (let i = 0; i < N; i++) {
       dummy.position.set(px[i], py[i], pz[i]);
       dummy.updateMatrix();
       particleMesh.setMatrixAt(i, dummy.matrix);
 
       const speed = Math.sqrt(vx[i] * vx[i] + vy[i] * vy[i] + vz[i] * vz[i]);
-      tmpColor.copy(colorSlow).lerp(colorFast, Math.min(speed / COLOR_MAX_SPEED, 1));
+      tmpColor.copy(slow).lerp(fast, Math.min(speed / COLOR_MAX_SPEED, 1));
       particleMesh.setColorAt(i, tmpColor);
     }
     particleMesh.instanceMatrix.needsUpdate = true;
@@ -384,6 +391,7 @@ export function init(renderer) {
     syncMesh();
     controls.update();
     viscEl.textContent = VISCOSITY_LABEL[viscosityKey];
+    viscEl.style.color = VISCOSITY_UI_COLOR[viscosityKey];
 
     renderer.render(scene, camera);
   }

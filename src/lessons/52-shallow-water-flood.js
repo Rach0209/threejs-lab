@@ -191,6 +191,7 @@ export function init(renderer) {
       }
     }
     damBroken = false;
+    rainOn = false; // 리셋했는데 비가 계속 내리고 있으면 저수지가 다시 차오르는 것처럼 보임
   }
 
   function breakDam() {
@@ -216,6 +217,14 @@ export function init(renderer) {
   // ══════════════════════════════════════════════════════════
   //  SWE 스텝 — Virtual Pipes (Mei et al. 2007 방식)
   // ══════════════════════════════════════════════════════════
+  // 지형 격자 바깥은 "열린 경계" — 실제 지형이라면 물이 지도 밖으로 계속
+  // 흘러나가는 것과 같다. 경계를 막힌 벽으로 두면(유량 0) 비가 내릴 때
+  // 빠져나갈 곳이 없어 저수지가 무한정 차오르는 문제가 있었음. 지도 밖을
+  // 아주 낮은 가상의 지형(BOUNDARY_H)으로 취급해 경계 칸의 물이 자연스럽게
+  // "지도 밖으로" 흘러 사라지게 함(질량 보존 정규화 단계가 실제 water가
+  // 없는 칸에서는 유량을 0으로 맞춰주므로 마른 칸이 마이너스가 되진 않음)
+  const BOUNDARY_H = -10;
+
   function simStep(dt) {
     // 1) 높이차(수압차)만큼 4방향 유량을 가속 — 각 칸이 자신의 유출량만 계산
     for (let iz = 0; iz < R; iz++) {
@@ -223,33 +232,30 @@ export function init(renderer) {
         const idx = iz * R + ix;
         const H = terrain[idx] + water[idx];
 
-        if (ix > 0) {
-          const n = idx - 1;
-          const dH = H - (terrain[n] + water[n]);
+        {
+          const Hn = ix > 0 ? terrain[idx - 1] + water[idx - 1] : BOUNDARY_H;
+          const dH = H - Hn;
           const f = fL[idx] * FLOW_DAMPING + dt * FLOW_ACCEL * dH / CELL;
           fL[idx] = f > 0 ? Math.min(f, MAX_FLUX) : 0;
-        } else fL[idx] = 0;
-
-        if (ix < R - 1) {
-          const n = idx + 1;
-          const dH = H - (terrain[n] + water[n]);
+        }
+        {
+          const Hn = ix < R - 1 ? terrain[idx + 1] + water[idx + 1] : BOUNDARY_H;
+          const dH = H - Hn;
           const f = fR[idx] * FLOW_DAMPING + dt * FLOW_ACCEL * dH / CELL;
           fR[idx] = f > 0 ? Math.min(f, MAX_FLUX) : 0;
-        } else fR[idx] = 0;
-
-        if (iz > 0) {
-          const n = idx - R;
-          const dH = H - (terrain[n] + water[n]);
+        }
+        {
+          const Hn = iz > 0 ? terrain[idx - R] + water[idx - R] : BOUNDARY_H;
+          const dH = H - Hn;
           const f = fT[idx] * FLOW_DAMPING + dt * FLOW_ACCEL * dH / CELL;
           fT[idx] = f > 0 ? Math.min(f, MAX_FLUX) : 0;
-        } else fT[idx] = 0;
-
-        if (iz < R - 1) {
-          const n = idx + R;
-          const dH = H - (terrain[n] + water[n]);
+        }
+        {
+          const Hn = iz < R - 1 ? terrain[idx + R] + water[idx + R] : BOUNDARY_H;
+          const dH = H - Hn;
           const f = fB[idx] * FLOW_DAMPING + dt * FLOW_ACCEL * dH / CELL;
           fB[idx] = f > 0 ? Math.min(f, MAX_FLUX) : 0;
-        } else fB[idx] = 0;
+        }
       }
     }
 
@@ -282,8 +288,9 @@ export function init(renderer) {
   }
 
   // ─── 제방 쌓기(클릭) ───────────────────────────────────────
+  const LEVEE_MAX_ADD = 3; // syncTerrainMesh 색칠에서도 같은 기준으로 씀
   function raiseLevee(cx, cz) {
-    const RADIUS = 1.1, AMOUNT = 0.5, MAX_ADD = 3;
+    const RADIUS = 1.1, AMOUNT = 0.5, MAX_ADD = LEVEE_MAX_ADD;
     for (let iz = 0; iz < R; iz++) {
       const z = worldZ(iz);
       if (Math.abs(z - cz) > RADIUS) continue;
@@ -341,6 +348,7 @@ export function init(renderer) {
   const grassColor = new THREE.Color(0x3f6212);
   const rockColor  = new THREE.Color(0x8a8378);
   const pavedColor = new THREE.Color(0x57534e);
+  const leveeColor = new THREE.Color(0xb45309); // 흙을 쌓아올린 제방 — 눈에 잘 띄는 황토색
   const _c = new THREE.Color();
   function syncTerrainMesh() {
     const pos = terrainGeo.attributes.position;
@@ -350,6 +358,10 @@ export function init(renderer) {
       const t = THREE.MathUtils.clamp((terrain[idx] - 1) / 4, 0, 1);
       _c.copy(grassColor).lerp(rockColor, t);
       if (plinthMask[idx] > 0.3) _c.lerp(pavedColor, Math.min(plinthMask[idx], 1));
+      // 사용자가 클릭으로 쌓은 제방은 원래 지형보다 높아진 만큼 황토색을 섞어
+      // 자연 지형과 뚜렷이 구분되게 함 (안 그러면 잔디색 언덕에 묻혀 티가 안 남)
+      const added = terrain[idx] - terrainBase[idx];
+      if (added > 0.02) _c.lerp(leveeColor, Math.min(added / LEVEE_MAX_ADD, 1) * 0.85 + 0.15);
       col.array[idx * 3 + 0] = _c.r; col.array[idx * 3 + 1] = _c.g; col.array[idx * 3 + 2] = _c.b;
     }
     pos.needsUpdate = true;

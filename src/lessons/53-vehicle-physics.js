@@ -17,9 +17,12 @@
 //                              restLength(자연 길이)·maxTravel(최대
 //                              압축량) 조합으로 승차감이 완전히 달라짐
 //    - 조향 vs 구동           : setSteeringValue()는 앞바퀴 방향만 틀고,
-//                              applyEngineForce()는 뒷바퀴에 힘을 줘서
-//                              민다 — 앞바퀴 굴림(FWD)/뒷바퀴 굴림(RWD)
-//                              /사륜(AWD)을 바퀴 인덱스만으로 선택 가능
+//                              applyEngineForce()는 원하는 바퀴 인덱스에
+//                              힘을 줘서 민다 — 뒷바퀴굴림(RWD)으로
+//                              해봤더니 가속할 때 구동 반작용이 뒷바퀴
+//                              서스펜션에만 쏠려 앞이 들리는(휠리) 현상이
+//                              생겨, 사륜굴림(AWD)으로 바꿔 반작용을
+//                              앞뒤로 분산시켜 안정화함
 //    - frictionSlip           : 바퀴 하나당 "타이어 그립" 값 — 낮추면
 //                              코너에서 미끄러지는(드리프트) 아케이드
 //                              느낌, 높이면 착 붙는 느낌
@@ -37,8 +40,14 @@ import * as THREE from 'three';
 import { Timer } from 'three';
 import * as CANNON from 'cannon-es';
 
-const MAX_ENGINE_FORCE = 1400;
-const MAX_BRAKE_FORCE  = 60;
+const MAX_ENGINE_FORCE = 900;
+// ⚠ 처음엔 60으로 뒀는데, 고속(90km/h대) 주행 중 브레이크를 밟으면 거의
+// 순간적으로 멈춰버려서 차체가 튕겨 날아가는 문제가 있었다(사용자가
+// "브레이크 밟으면 차가 날라간다"고 지적). 브레이크 값이 클수록 바퀴가
+// 그 프레임에 즉시 "잠기다시피" 붙잡혀서, 차체는 아직 관성으로 밀리는
+// 상태와 충돌해 서스펜션에 급격한 충격이 실리는 것으로 보임 — 값을
+// 확 낮춰서 "감속"처럼 느껴지게 함
+const MAX_BRAKE_FORCE  = 14;
 const MAX_STEER        = 0.55;
 const STEER_LERP       = 0.12; // 조향각이 순간이동하지 않고 부드럽게 따라오게
 
@@ -188,6 +197,12 @@ export function init(renderer) {
     material: bodyMat,
     collisionFilterGroup: GROUP_VEHICLE,
     collisionFilterMask: GROUP_WORLD, // 다른 차량은 없으므로 세계 지형/장애물만 충돌
+    // ⚠ 브레이크를 완전히 밟았다 뗀 직후에도 아주 작은 잔류 속도(약 0.3m/s)가
+    // 영원히 안 없어지는 문제가 있었다 — 고속 제동 시 타이어 마찰 솔버가
+    // 남기는 미세한 오차로 추정되며, brake=0이 되면 그걸 깎아줄 저항이
+    // 전혀 없어서 그대로 계속 굴러갔음(실제 자동차의 구름저항에 해당하는
+    // 게 없었던 셈). linearDamping을 살짝 줘서 자연스럽게 0으로 수렴하게 함
+    linearDamping: 0.05,
   });
   chassisBody.addShape(new CANNON.Box(CHASSIS_HALF));
   chassisBody.position.set(0, 2, 30);
@@ -203,11 +218,15 @@ export function init(renderer) {
   const wheelOptions = {
     radius: WHEEL_RADIUS,
     directionLocal: new CANNON.Vec3(0, -1, 0),
-    suspensionStiffness: 32,
+    // ⚠ 가속 페달을 누르고 있으면 앞부분이 들려서 조향이 안 먹는 문제가
+    // 있었다(사용자 리포트) — 구동력이 지면 높이(차체 중심보다 낮은
+    // 바퀴 접지점)에서 작용해 차체를 뒤로 젖히는 토크를 만드는 게
+    // 원인. 서스펜션을 더 뻣뻣하게(32→42) 해서 그 토크에 덜 밀리게 함
+    suspensionStiffness: 42,
     suspensionRestLength: 0.32,
     frictionSlip: 2.2,           // 낮출수록 잘 미끄러짐(드리프트), 높일수록 착 붙음
-    dampingRelaxation: 2.4,
-    dampingCompression: 4.5,
+    dampingRelaxation: 2.6,
+    dampingCompression: 5.2,
     maxSuspensionForce: 100000,
     rollInfluence: 0.02,
     axleLocal: new CANNON.Vec3(-1, 0, 0),
@@ -230,7 +249,6 @@ export function init(renderer) {
   vehicle.addToWorld(world);
 
   const FRONT_WHEELS = [0, 1];
-  const REAR_WHEELS  = [2, 3];
   const ALL_WHEELS   = [0, 1, 2, 3];
 
   // ─── 차체/바퀴 메시 ────────────────────────────────────────
@@ -327,11 +345,16 @@ export function init(renderer) {
     steerValue += (steerInput * MAX_STEER - steerValue) * STEER_LERP;
     FRONT_WHEELS.forEach(i => vehicle.setSteeringValue(steerValue, i));
 
-    // 가속/후진 — 뒷바퀴굴림(RWD)
+    // 가속/후진 — 사륜굴림(AWD)
+    // ⚠ 처음엔 뒷바퀴굴림(RWD)이었는데, 가속 페달을 누르고 있으면 앞이
+    // 들려 조향이 안 먹는 문제가 있었다(사용자 리포트) — RWD는 구동
+    // 반작용이 뒷바퀴 서스펜션에만 실려 차체를 뒤로 젖히는(스쿼트→
+    // 휠리) 경향이 실제 자동차보다도 강하게 나타남. 앞바퀴에도 힘을
+    // 나눠 걸면 그 반작용이 앞뒤로 분산돼 훨씬 안정적으로 붙어있음
     let engineForce = 0;
     if (keys['KeyW'] || keys['ArrowUp'])    engineForce = -MAX_ENGINE_FORCE;
     if (keys['KeyS'] || keys['ArrowDown'])  engineForce =  MAX_ENGINE_FORCE * 0.7;
-    REAR_WHEELS.forEach(i => vehicle.applyEngineForce(engineForce, i));
+    ALL_WHEELS.forEach(i => vehicle.applyEngineForce(engineForce, i));
 
     const braking = keys['Space'] ? MAX_BRAKE_FORCE : 0;
     ALL_WHEELS.forEach(i => vehicle.setBrake(braking, i));
@@ -353,9 +376,13 @@ export function init(renderer) {
     });
 
     // 3인칭 추격 카메라 — 차체 진행 방향을 그대로 따라감
+    // ⚠ 카메라를 전진 방향(+_fwd)에 두면 차 앞에서 마주 보는 구도가 되어버림
+    // (W를 눌러 전진할수록 오히려 차와 정면으로 가까워지는 이상한 느낌).
+    // 추격 카메라는 항상 차 뒤(-_fwd)에 있어야 "우리도 차가 가는 방향을
+    // 같이 보는" 느낌이 남
     _fwd.set(0, 0, 1).applyQuaternion(chassisMesh.quaternion);
     _camPos.copy(chassisMesh.position)
-      .addScaledVector(_fwd, 7)
+      .addScaledVector(_fwd, -7)
       .add(new THREE.Vector3(0, 3.2, 0));
     camera.position.lerp(_camPos, 0.08);
     _camTarget.copy(chassisMesh.position).add(new THREE.Vector3(0, 0.8, 0));

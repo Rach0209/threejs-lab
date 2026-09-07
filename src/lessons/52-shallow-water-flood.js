@@ -208,6 +208,9 @@ export function init(renderer) {
         terrain[idx] = terrainBase[idx] - damBump[idx]; // 댐 기여분만 제거 = 붕괴 부분만 뚫림
       }
     }
+    syncTerrainMesh(); // ⚠ 이걸 빠뜨리면 물리적으로는 이미 뚫렸는데(물은 넘어감) 화면엔
+                        // 댐이 멀쩡해 보이는 채로 남아있다가, 다른 이유로(제방 클릭 등)
+                        // syncTerrainMesh가 처음 호출되는 순간에야 갑자기 뚫린 모습으로 바뀜
   }
 
   let damBroken = false;
@@ -217,14 +220,17 @@ export function init(renderer) {
   // ══════════════════════════════════════════════════════════
   //  SWE 스텝 — Virtual Pipes (Mei et al. 2007 방식)
   // ══════════════════════════════════════════════════════════
-  // 지형 격자 바깥은 "열린 경계" — 실제 지형이라면 물이 지도 밖으로 계속
-  // 흘러나가는 것과 같다. 경계를 막힌 벽으로 두면(유량 0) 비가 내릴 때
-  // 빠져나갈 곳이 없어 저수지가 무한정 차오르는 문제가 있었음. 지도 밖을
-  // 아주 낮은 가상의 지형(BOUNDARY_H)으로 취급해 경계 칸의 물이 자연스럽게
-  // "지도 밖으로" 흘러 사라지게 함(질량 보존 정규화 단계가 실제 water가
-  // 없는 칸에서는 유량을 0으로 맞춰주므로 마른 칸이 마이너스가 되진 않음)
-  const BOUNDARY_H = -10;
-
+  // ⚠ 한때 지도 경계를 "열린 경계"로 만들어 비가 무한정 안 차게 했었는데,
+  // 이 저수지는 댐 상류(x<DAM_X) 전체를 채우다 보니 지도 왼쪽·위/아래
+  // 경계에 그대로 닿아있어서 — 댐을 부수지 않아도 저수지 자체가 열린
+  // 경계로 계속 새어나가 "가만히 보고만 있어도 물이 사라지는" 버그가 됐다.
+  // 그 다음엔 대신 모든 칸에 미세한 증발(evaporation)을 넣어봤는데, 칸
+  // 하나당 속도는 작아도(0.01/s) 저수지가 수백 칸이라 합산하면 30초 만에
+  // 35%가 사라지는 수준이라 이것도 눈에 띄게 샘. 결론: "저수지는 댐이
+  // 멀쩡한 한 완벽하게 안정적이어야 한다"가 더 중요한 요구사항이므로,
+  // 경계도 다시 막힌 벽으로, 증발도 없이 순수 질량 보존만 유지한다. 비를
+  // 오래 켜두면 총량이 계속 늘 수는 있지만, 사용자가 직접 끄면(P) 그
+  // 즉시 늘어나는 게 멈추므로 감내할 만한 트레이드오프로 판단함.
   function simStep(dt) {
     // 1) 높이차(수압차)만큼 4방향 유량을 가속 — 각 칸이 자신의 유출량만 계산
     for (let iz = 0; iz < R; iz++) {
@@ -232,30 +238,33 @@ export function init(renderer) {
         const idx = iz * R + ix;
         const H = terrain[idx] + water[idx];
 
-        {
-          const Hn = ix > 0 ? terrain[idx - 1] + water[idx - 1] : BOUNDARY_H;
-          const dH = H - Hn;
+        if (ix > 0) {
+          const n = idx - 1;
+          const dH = H - (terrain[n] + water[n]);
           const f = fL[idx] * FLOW_DAMPING + dt * FLOW_ACCEL * dH / CELL;
           fL[idx] = f > 0 ? Math.min(f, MAX_FLUX) : 0;
-        }
-        {
-          const Hn = ix < R - 1 ? terrain[idx + 1] + water[idx + 1] : BOUNDARY_H;
-          const dH = H - Hn;
+        } else fL[idx] = 0;
+
+        if (ix < R - 1) {
+          const n = idx + 1;
+          const dH = H - (terrain[n] + water[n]);
           const f = fR[idx] * FLOW_DAMPING + dt * FLOW_ACCEL * dH / CELL;
           fR[idx] = f > 0 ? Math.min(f, MAX_FLUX) : 0;
-        }
-        {
-          const Hn = iz > 0 ? terrain[idx - R] + water[idx - R] : BOUNDARY_H;
-          const dH = H - Hn;
+        } else fR[idx] = 0;
+
+        if (iz > 0) {
+          const n = idx - R;
+          const dH = H - (terrain[n] + water[n]);
           const f = fT[idx] * FLOW_DAMPING + dt * FLOW_ACCEL * dH / CELL;
           fT[idx] = f > 0 ? Math.min(f, MAX_FLUX) : 0;
-        }
-        {
-          const Hn = iz < R - 1 ? terrain[idx + R] + water[idx + R] : BOUNDARY_H;
-          const dH = H - Hn;
+        } else fT[idx] = 0;
+
+        if (iz < R - 1) {
+          const n = idx + R;
+          const dH = H - (terrain[n] + water[n]);
           const f = fB[idx] * FLOW_DAMPING + dt * FLOW_ACCEL * dH / CELL;
           fB[idx] = f > 0 ? Math.min(f, MAX_FLUX) : 0;
-        }
+        } else fB[idx] = 0;
       }
     }
 

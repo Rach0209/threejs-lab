@@ -370,6 +370,13 @@ export const LESSONS = [
     fileKey: '52-shallow-water-flood',
     file: () => import('../lessons/52-shallow-water-flood.js'),
   },
+  {
+    id: '53',
+    title: '차량 물리 (RaycastVehicle)',
+    desc: 'cannon-es RaycastVehicle, 서스펜션·조향·구동 튜닝, 점프대·드럼통 테스트 트랙',
+    fileKey: '53-vehicle-physics',
+    file: () => import('../lessons/53-vehicle-physics.js'),
+  },
 ];
 
 const PANEL_WIDTH = 260; // 펼친 상태 패널 너비 (px)
